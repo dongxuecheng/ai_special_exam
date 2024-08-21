@@ -96,8 +96,25 @@ PLATFORM_WEARING_VIDEO_SOURCES=PLATFORM_CH1_RTSP
 PLATFORM_SETUP_VIDEO_SOURCES=PLATFORM_CH2_RTSP
 PLATFORM_SETUP_MODEL=PLATFORM_CH2_MODEL
 
-# 焊件是否在焊台上，焊台的多边形
-#REGION4 = np.array([[1614, 630], [1712, 961], [1963, 953], [1841, 643]], np.int32)
+#吊篮清洗
 
-# task1_finish=0 #劳保任务完成标志，当前逻辑是为3则劳保任务完成
-# task1_sava_img=False #劳保任务图片保存标志
+
+BASKET_CLEANING_CH4_POSE_MODEL='/mnt/xcd/code/ai_test/weights/yolov8s-pose.pt'
+BASKET_CLEANING_CH5_DETECT_MODEL='/mnt/xcd/code/ai_test/weights/detect.pt'
+
+BASKET_CLEANING_CH6_POSE_MODEL='/mnt/xcd/code/ai_test/weights/yolov8s-pose.pt'
+BASKET_CLEANING_CH6_DETECT_MODEL='/mnt/xcd/code/ai_test/weights/detect.pt'
+
+BASKET_CLEANING_CH4_RTSP='rtsp://admin:yaoan1234@172.16.22.237/cam/realmonitor?channel=1&subtype=0'
+BASKET_CLEANING_CH5_RTSP='rtsp://admin:yaoan1234@172.16.22.239/cam/realmonitor?channel=1&subtype=0'
+BASKET_CLEANING_CH6_RTSP='rtsp://admin:yaoan1234@172.16.22.242/cam/realmonitor?channel=1&subtype=0'
+
+BASKET_CLEANING_VIDEO_SOURCES=[BASKET_CLEANING_CH4_RTSP,
+                               BASKET_CLEANING_CH5_RTSP,
+                               BASKET_CLEANING_CH6_RTSP,
+                               BASKET_CLEANING_CH6_RTSP]
+
+BASKET_CLEANING_MODEL_SOURCES=[BASKET_CLEANING_CH4_POSE_MODEL,
+                               BASKET_CLEANING_CH5_DETECT_MODEL,
+                               BASKET_CLEANING_CH6_POSE_MODEL,
+                               BASKET_CLEANING_CH6_DETECT_MODEL]

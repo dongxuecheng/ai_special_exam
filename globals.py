@@ -73,3 +73,8 @@ platform_remove_steps_img=[False]*14
 
 remove_detection_timers = [time.time()] * 14  # 初始化计时器
 remove_detection_status = [False]*14 # 初始化检
+
+#吊篮清洗
+basket_suspension_flag=False
+basket_warning_zone_flag=False
+basket_steel_wire_flag=False
