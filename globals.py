@@ -75,6 +75,16 @@ remove_detection_timers = [time.time()] * 14  # 初始化计时器
 remove_detection_status = [False]*14 # 初始化检
 
 #吊篮清洗
-basket_suspension_flag=False
-basket_warning_zone_flag=False
-basket_steel_wire_flag=False
+basket_person_flag=False#吊篮区域是否存在人员
+basket_suspension_flag=False#吊篮悬挂机构
+basket_warning_zone_flag=False#吊篮警戒区
+basket_steel_wire_flag=False#吊篮钢丝绳
+basket_platform_flag=False#吊篮平台
+basket_lifting_flag=False#吊篮升降机构
+basket_safety_lock_flag=False#吊篮安全锁
+basket_electrical_system_flag=False#吊篮电气系统
+basket_empty_load_flag=False#吊篮空载
+basket_safety_belt_flag=False#吊篮安全带挂设
+
+basket_cleaning_operation_flag=False#吊篮清洗操作,检查刷子是否在指定区域
+basket_cleaning_up_flag=False#吊篮清理现场

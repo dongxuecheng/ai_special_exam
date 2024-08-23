@@ -9,6 +9,7 @@ POST_IMG_PATH1 = 'http://172.16.20.163:5001/images'  # 通过端口映射post发
 POST_IMG_PATH2 = 'http://172.16.20.163:5002/images' #焊接考核科目2
 POST_IMG_PATH3 = 'http://172.16.20.163:5003/images' #平台搭设科目1，劳保穿戴
 POST_IMG_PATH4 = 'http://172.16.20.163:5004/images' #平台搭设科目2，搭建和拆除
+POST_IMG_PATH5 = 'http://172.16.20.163:5005/images'#吊篮清洗
 
 #焊接考核视频流
 # Define paths to RTSP streams
@@ -99,11 +100,10 @@ PLATFORM_SETUP_MODEL=PLATFORM_CH2_MODEL
 #吊篮清洗
 
 
-BASKET_CLEANING_CH4_POSE_MODEL='/mnt/xcd/code/ai_test/weights/yolov8s-pose.pt'
-BASKET_CLEANING_CH5_DETECT_MODEL='/mnt/xcd/code/ai_test/weights/detect.pt'
-
-BASKET_CLEANING_CH6_POSE_MODEL='/mnt/xcd/code/ai_test/weights/yolov8s-pose.pt'
-BASKET_CLEANING_CH6_DETECT_MODEL='/mnt/xcd/code/ai_test/weights/detect.pt'
+BASKET_CLEANING_CH4_POSE_MODEL='/mnt/xcd/code/ai_test/weights/yolov8s-pose1.pt'
+BASKET_CLEANING_CH5_DETECT_MODEL='/mnt/xcd/code/ai_test/weights/yolov8s1.pt'
+BASKET_CLEANING_CH6_POSE_MODEL='/mnt/xcd/code/ai_test/weights/yolov8s-pose2.pt'
+BASKET_CLEANING_CH6_DETECT_MODEL='/mnt/xcd/code/ai_test/weights/yolov8s2.pt'
 
 BASKET_CLEANING_CH4_RTSP='rtsp://admin:yaoan1234@172.16.22.237/cam/realmonitor?channel=1&subtype=0'
 BASKET_CLEANING_CH5_RTSP='rtsp://admin:yaoan1234@172.16.22.239/cam/realmonitor?channel=1&subtype=0'
@@ -118,3 +118,33 @@ BASKET_CLEANING_MODEL_SOURCES=[BASKET_CLEANING_CH4_POSE_MODEL,
                                BASKET_CLEANING_CH5_DETECT_MODEL,
                                BASKET_CLEANING_CH6_POSE_MODEL,
                                BASKET_CLEANING_CH6_DETECT_MODEL]
+
+#
+
+#悬挂机构区域，分为四个区域 D4
+BASKET_SUSPENSION_REGION = np.array([
+    [[668, 310], [800, 310], [800, 1070], [668, 1070]],
+    [[1690, 310], [1750, 310], [1750, 710], [1690, 710]],
+    [[1350, 340], [1405, 340], [1405, 720], [1350, 720]],
+    [[550, 385], [635, 385], [635, 880], [550, 880]]
+], np.int32)
+
+BASKET_STEEL_WIRE_REGION = np.array([
+    [(374, 846), (601, 970), (630, 900), (441, 786)],  # 右一多边形区域
+    [(1518, 736), (1649, 945), (2005, 917), (1888, 677)]  # 右二多边形区域
+    # [(1293, 0), (1867, 935), (1904, 906), (1354, 9)],  # 左边多边形区域
+], np.int32)#钢丝绳区域，暂时没有钢丝绳的区域
+
+BASKET_PLATFORM_REGION = np.array([[450, 935], [370, 1275], [1685, 1350], [1600, 720]], np.int32)
+BASKET_LIFTING_REGION = np.array([
+    [[1275, 975], [1270, 1160], [1500, 1160], [1480, 975]],
+    [[570, 1015], [560, 1150], [820, 1190], [832, 1060]]
+],np.int32)
+
+BASKET_SAFETY_LOCK_REGION = np.array([
+    [[1635, 813], [1742, 927], [1955, 910], [1906, 747]],
+    [[650, 944], [800, 1000], [800, 923], [680, 872]]
+    ], np.int32)
+BASKET_ELECTRICAL_SYSTEM_REGION = np.array([[950, 680], [930, 880], [1360, 910], [1250, 660]], np.int32)
+BASKET_CLEANING_OPERATION_REGION = np.array([[668, 310], [800, 310], [800, 1070], [668, 1070]], np.int32)
+BASKET_EMPTY_LOAD_REGION = np.array([(752, 855), (712, 969), (836, 1020), (896, 918)], np.int32)
