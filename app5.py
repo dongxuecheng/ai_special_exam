@@ -2,7 +2,6 @@ import re
 import threading
 import time
 from flask import Flask, jsonify,send_from_directory
-
 from basket_cleaning_detect import start_basket_cleaning_detection,init_basket_cleaning_detection
 from globals import inference_thread, stop_event,redis_client
 
