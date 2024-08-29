@@ -88,3 +88,6 @@ basket_safety_belt_flag=False#吊篮安全带挂设
 
 basket_cleaning_operation_flag=False#吊篮清洗操作,检查刷子是否在指定区域
 basket_cleaning_up_flag=False#吊篮清理现场
+
+#单人吊具
+equipment_cleaning_flag=[False]*12

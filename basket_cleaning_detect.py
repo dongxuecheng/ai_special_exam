@@ -66,9 +66,14 @@ def save_image_and_redis(redis_client, results, step_name, save_path, post_path)
     elif step_name == "basket_step_3":
         annotated_frame = cv2.polylines(annotated_frame, [region.reshape(-1, 1, 2) for region in BASKET_STEEL_WIRE_REGION], isClosed=True, color=(0, 255, 0), thickness=4)
     elif step_name == "basket_step_4":
-        annotated_frame = cv2.polylines(annotated_frame, BASKET_PLATFORM_REGION.reshape(-1, 1, 2), isClosed=True, color=(0, 255, 0), thickness=4)
+        annotated_frame = cv2.polylines(annotated_frame, [BASKET_PLATFORM_REGION.reshape(-1, 1, 2)], isClosed=True, color=(0, 255, 0), thickness=4)
+        #cv2.fillPoly(annotated_frame, [BASKET_PLATFORM_REGION], (0, 255, 0))#填充区域
+    elif step_name == "basket_step_5":
+        annotated_frame = cv2.polylines(annotated_frame, [region.reshape(-1, 1, 2) for region in BASKET_LIFTING_REGION], isClosed=True, color=(0, 255, 0), thickness=4)
     elif step_name == "basket_step_6":
         annotated_frame = cv2.polylines(annotated_frame, [region.reshape(-1, 1, 2) for region in BASKET_SAFETY_LOCK_REGION], isClosed=True, color=(0, 255, 0), thickness=4)
+    elif step_name == "basket_step_7":
+        annotated_frame = cv2.polylines(annotated_frame, [BASKET_ELECTRICAL_SYSTEM_REGION.reshape(-1, 1, 2)], isClosed=True, color=(0, 255, 0), thickness=4)
     
     cv2.imwrite(imgpath, annotated_frame)
     redis_client.set(step_name, post_path)
@@ -109,10 +114,8 @@ def process_video(model_path, video_source,start_event):
 
             results = model.predict(frame,conf=0.6,verbose=False)
 
-            
-
-
             global basket_suspension_flag,basket_warning_zone_flag,basket_steel_wire_flag,basket_platform_flag,basket_electrical_system_flag,basket_lifting_flag,basket_safety_lock_flag,basket_safety_belt_flag,basket_cleaning_up_flag,basket_cleaning_operation_flag,basket_empty_load_flag,basket_person_flag
+            global BASKET_PLATFORM_REGION,BASKET_LIFTING_REGION,BASKET_ELECTRICAL_SYSTEM_REGION
             for r in results:
                 if model_path==BASKET_CLEANING_MODEL_SOURCES[0] and not basket_suspension_flag:#D4悬挂机构
                     boxes=r.boxes.xyxy#人体的检测框
@@ -194,7 +197,7 @@ def process_video(model_path, video_source,start_event):
                     if not basket_person_flag and get_region_mean_color([BASKET_EMPTY_LOAD_REGION], frame):
                         basket_empty_load_flag=True 
                     
-                else:#d6目标检测
+                elif model_path==BASKET_CLEANING_MODEL_SOURCES[3]:#d6目标检测
                     boxes = r.boxes.xyxy  
                     confidences = r.boxes.conf 
                     classes = r.boxes.cls  
@@ -211,6 +214,42 @@ def process_video(model_path, video_source,start_event):
                             is_inside = any(point_in_region(point,BASKET_CLEANING_OPERATION_REGION) for point in points)
                             if is_inside:
                                 basket_cleaning_operation_flag=True
+                else:
+                    boxes = r.boxes.xyxy
+                    masks = r.masks.xy
+                    classes = r.boxes.cls 
+                    hoist=[]
+                    for i in range(len(boxes)):
+                        x1, y1, x2, y2 = boxes[i].tolist()
+                        cls = int(classes[i].item())
+                        label = model.names[cls]
+                        if label=="basket":
+                            BASKET_PLATFORM_REGION = np.array(masks[i].tolist(), np.int32)
+                        elif label=="hoist":
+                            #hoist.append(masks[i].tolist())
+                            #hoist.append(np.array(masks[i].tolist(), np.int32))
+                            # print(masks[i].tolist())
+                            BASKET_LIFTING_REGION = np.array(masks[i].tolist(),np.int32)
+                            #pass
+                            #TODO
+
+                        elif label=="electricalSystem":
+                            BASKET_ELECTRICAL_SYSTEM_REGION = np.array(masks[i].tolist(), np.int32)
+                    
+                    # 检查是否所有hoist masks具有相同形状
+                    # if all(h.shape == hoist[0].shape for h in hoist):
+                    #     BASKET_LIFTING_REGION = np.vstack(hoist)  # 堆叠成二维数组
+                    # else:
+                    #     # 如果形状不同，可以手动处理，比如补齐/裁剪
+                    #     # 这里假设你想补齐到最大的形状
+                    #     max_shape = max(h.shape for h in hoist)
+                    #     padded_hoist = [np.pad(h, ((0, max_shape[0] - h.shape[0]), (0, max_shape[1] - h.shape[1])), mode='constant') for h in hoist]
+                    #     BASKET_LIFTING_REGION = np.array(padded_hoist)
+                    #BASKET_LIFTING_REGION = np.array(hoist,np.int32)
+                    #print("hoist",hoist.shape)
+
+                            
+
 
             if model_path==BASKET_CLEANING_MODEL_SOURCES[0] and not redis_client.exists("basket_step_2") and basket_suspension_flag:#D4悬挂机构 
                 save_image_and_redis(redis_client, results, "basket_step_2", SAVE_IMG_PATH, POST_IMG_PATH5)

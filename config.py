@@ -10,6 +10,7 @@ POST_IMG_PATH2 = 'http://172.16.20.163:5002/images' #焊接考核科目2
 POST_IMG_PATH3 = 'http://172.16.20.163:5003/images' #平台搭设科目1，劳保穿戴
 POST_IMG_PATH4 = 'http://172.16.20.163:5004/images' #平台搭设科目2，搭建和拆除
 POST_IMG_PATH5 = 'http://172.16.20.163:5005/images'#吊篮清洗
+POST_IMG_PATH5 = 'http://172.16.20.163:5006/images'#吊具清洗
 
 #焊接考核视频流
 # Define paths to RTSP streams
@@ -104,6 +105,7 @@ BASKET_CLEANING_CH4_POSE_MODEL='/mnt/xcd/code/ai_test/weights/yolov8s-pose1.pt'
 BASKET_CLEANING_CH5_DETECT_MODEL='/mnt/xcd/code/ai_test/weights/yolov8s1.pt'
 BASKET_CLEANING_CH6_POSE_MODEL='/mnt/xcd/code/ai_test/weights/yolov8s-pose2.pt'
 BASKET_CLEANING_CH6_DETECT_MODEL='/mnt/xcd/code/ai_test/weights/yolov8s2.pt'
+BASKET_CLEANING_CH6_SEG_MODEL='/mnt/xcd/code/ai_test/weights/basket_seg.pt'
 
 BASKET_CLEANING_CH4_RTSP='rtsp://admin:yaoan1234@172.16.22.237/cam/realmonitor?channel=1&subtype=0'
 BASKET_CLEANING_CH5_RTSP='rtsp://admin:yaoan1234@172.16.22.239/cam/realmonitor?channel=1&subtype=0'
@@ -112,12 +114,14 @@ BASKET_CLEANING_CH6_RTSP='rtsp://admin:yaoan1234@172.16.22.242/cam/realmonitor?c
 BASKET_CLEANING_VIDEO_SOURCES=[BASKET_CLEANING_CH4_RTSP,
                                BASKET_CLEANING_CH5_RTSP,
                                BASKET_CLEANING_CH6_RTSP,
+                               BASKET_CLEANING_CH6_RTSP,
                                BASKET_CLEANING_CH6_RTSP]
 
 BASKET_CLEANING_MODEL_SOURCES=[BASKET_CLEANING_CH4_POSE_MODEL,
                                BASKET_CLEANING_CH5_DETECT_MODEL,
                                BASKET_CLEANING_CH6_POSE_MODEL,
-                               BASKET_CLEANING_CH6_DETECT_MODEL]
+                               BASKET_CLEANING_CH6_DETECT_MODEL,
+                               BASKET_CLEANING_CH6_SEG_MODEL]
 
 #
 
@@ -135,16 +139,45 @@ BASKET_STEEL_WIRE_REGION = np.array([
     # [(1293, 0), (1867, 935), (1904, 906), (1354, 9)],  # 左边多边形区域
 ], np.int32)#钢丝绳区域，暂时没有钢丝绳的区域
 
-BASKET_PLATFORM_REGION = np.array([[450, 935], [370, 1275], [1685, 1350], [1600, 720]], np.int32)
-BASKET_LIFTING_REGION = np.array([
-    [[1275, 975], [1270, 1160], [1500, 1160], [1480, 975]],
-    [[570, 1015], [560, 1150], [820, 1190], [832, 1060]]
-],np.int32)
+BASKET_PLATFORM_REGION = np.array([], np.int32)
+BASKET_LIFTING_REGION = np.array([]
+,np.int32)
 
 BASKET_SAFETY_LOCK_REGION = np.array([
     [[1635, 813], [1742, 927], [1955, 910], [1906, 747]],
     [[650, 944], [800, 1000], [800, 923], [680, 872]]
     ], np.int32)
-BASKET_ELECTRICAL_SYSTEM_REGION = np.array([[950, 680], [930, 880], [1360, 910], [1250, 660]], np.int32)
+BASKET_ELECTRICAL_SYSTEM_REGION = np.array([], np.int32)
 BASKET_CLEANING_OPERATION_REGION = np.array([[668, 310], [800, 310], [800, 1070], [668, 1070]], np.int32)
 BASKET_EMPTY_LOAD_REGION = np.array([(752, 855), (712, 969), (836, 1020), (896, 918)], np.int32)
+
+
+#单人吊具
+EQUIPMENT_CLEANING_CH3_RTSP='rtsp://admin:yaoan1234@172.16.22.238/cam/realmonitor?channel=1&subtype=0'
+EQUIPMENT_CLEANING_CH8_RTSP='rtsp://admin:yaoan1234@172.16.22.44/cam/realmonitor?channel=1&subtype=0'
+
+
+EQUIPMENT_CLEANING_CH3_DETECT_MODEL='/mnt/xcd/code/ai_test/weights/yolov8s1.pt'
+EQUIPMENT_CLEANING_CH8_POSE_MODEL='/mnt/xcd/code/ai_test/weights/yolov8s-pose2.pt'
+EQUIPMENT_CLEANING_CH8_DETECT_MODEL='/mnt/xcd/code/ai_test/weights/yolov8s2.pt'
+
+EQUIPMENT_CLEANING_VIDEO_SOURCES=[EQUIPMENT_CLEANING_CH3_RTSP,
+                                  EQUIPMENT_CLEANING_CH8_RTSP,
+                                  EQUIPMENT_CLEANING_CH8_RTSP
+]
+
+EQUIPMENT_CLEANING_MODEL_SOURCES=[EQUIPMENT_CLEANING_CH3_DETECT_MODEL,
+                                  EQUIPMENT_CLEANING_CH8_POSE_MODEL,
+                                  EQUIPMENT_CLEANING_CH8_DETECT_MODEL
+]
+
+EQUIPMENT_ANCHOR_DEVICE_REGION = np.array([
+    [[668, 310], [800, 310], [800, 1070], [668, 1070]],
+], np.int32)
+EQUIPMENT_WORK_ROPE_REGION = np.array([
+    [[668, 310], [800, 310], [800, 1070], [668, 1070]],
+], np.int32)
+EQUIPMENT_SAFETY_ROPE_REGION = np.array([
+    [[668, 310], [800, 310], [800, 1070], [668, 1070]],
+], np.int32)
+EQUIPMENT_CLEANING_OPERATION_REGION=np.array([[668, 310], [800, 310], [800, 1070], [668, 1070]], np.int32)
