@@ -24,18 +24,19 @@ def init_platform_setup_detection():
 
 def start_platform_setup_detection(start_events):
     threads = []
-    model_path = PLATFORM_SETUP_MODEL
-    video_source = PLATFORM_SETUP_VIDEO_SOURCES
-    event = threading.Event()
-    start_events.append(event)
-    thread = threading.Thread(target=process_video, args=(model_path, video_source, event))
-    threads.append(thread)
-    thread.daemon = True
-    thread.start()
+    for video_source in PLATFORM_SETUP_VIDEO_SOURCES:
+        event = threading.Event()
+        start_events.append(event)
+        thread = threading.Thread(target=process_video, args=(PLATFORM_SETUP_MODEL,video_source,event))
+        threads.append(thread)
+        thread.daemon=True
+        thread.start()
 
-    # Wait for the thread to complete
-    thread.join()
-    print("搭设线程运行结束")
+
+    # Wait for all threads to complete
+    for thread in threads:
+        thread.join()
+        print("平台搭设子线程启动")
 
 
 
@@ -118,6 +119,8 @@ def process_video(model_path, video_source,start_event):
                     x_center = (box_coords[0][0] + box_coords[1][0]+box_coords[2][0]+box_coords[3][0]) / 4
                     y_center=(box_coords[0][1] + box_coords[1][1]+box_coords[2][1]+box_coords[3][1]) / 4
                     center_point = (int(x_center), int(y_center))
+
+                    
                     if label=="wheel":#轮子
                         platform_setup_steps_detect_num[0]+=1
                         if platform_setup_steps_detect_num[0]>3:

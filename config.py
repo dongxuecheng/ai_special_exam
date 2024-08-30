@@ -10,7 +10,7 @@ POST_IMG_PATH2 = 'http://172.16.20.163:5002/images' #焊接考核科目2
 POST_IMG_PATH3 = 'http://172.16.20.163:5003/images' #平台搭设科目1，劳保穿戴
 POST_IMG_PATH4 = 'http://172.16.20.163:5004/images' #平台搭设科目2，搭建和拆除
 POST_IMG_PATH5 = 'http://172.16.20.163:5005/images'#吊篮清洗
-POST_IMG_PATH5 = 'http://172.16.20.163:5006/images'#吊具清洗
+POST_IMG_PATH6 = 'http://172.16.20.163:5006/images'#吊具清洗
 
 #焊接考核视频流
 # Define paths to RTSP streams
@@ -76,12 +76,26 @@ WELDING_REGION3 = np.array([[1613, 627], [1601, 658], [1697, 987], [1710, 962]],
 
 ####平台搭设视频流
 PLATFORM_CH1_RTSP='rtsp://admin:yaoan1234@172.16.22.241/cam/realmonitor?channel=1&subtype=0'#检测穿戴
-PLATFORM_CH2_RTSP='rtsp://admin:yaoan1234@172.16.22.240/cam/realmonitor?channel=1&subtype=0'#脚手架搭建
 
-PLATFORM_CH3_RTSP='rtsp://admin:yaoan1234@172.16.22.243/cam/realmonitor?channel=1&subtype=0'#脚手架搭建
+PLATFORM_CH2_RTSP='rtsp://admin:yaoan1234@172.16.22.240/cam/realmonitor?channel=1&subtype=0'#脚手架搭建
+# PLATFORM_CH3_RTSP='rtsp://admin:yaoan1234@172.16.22.243/cam/realmonitor?channel=1&subtype=0'#脚手架搭建
+PLATFORM_CH4_RTSP='rtsp://admin:yaoan1234@172.16.22.233/cam/realmonitor?channel=1&subtype=0'#脚手架搭建
 
 PLATFORM_CH1_MODEL='/mnt/xcd/code/ai_test/weights/platform_ch1_wearing.pt'
-PLATFORM_CH2_MODEL='/mnt/xcd/code/ai_test/weights/high_work_obb_final.pt'
+
+PLATFORM_SETUP_MODEL='/mnt/xcd/code/ai_test/weights/obb830.pt'
+PLATFORM_SETUP_VIDEO_SOURCES=[PLATFORM_CH2_RTSP,
+                              #PLATFORM_CH3_RTSP,
+                              PLATFORM_CH4_RTSP]
+
+PLATFORM_WEARING_MODEL=[
+    HUMAN_DETECTION_MODEL,
+    PLATFORM_CH1_MODEL    
+]
+
+PLATFORM_WEARING_VIDEO_SOURCES=PLATFORM_CH1_RTSP
+
+#PLATFORM_CH2_MODEL='/mnt/xcd/code/ai_test/weights/high_work_obb_final.pt'
 
 # Define paths to input videos
 
@@ -89,14 +103,9 @@ PLATFORM_CH2_MODEL='/mnt/xcd/code/ai_test/weights/high_work_obb_final.pt'
 #焊接劳保检测相关参数
 
 #################平台搭设检测相关参数
-PLATFORM_WEARING_MODEL=[
-    HUMAN_DETECTION_MODEL,
-    PLATFORM_CH1_MODEL    
-]
 
-PLATFORM_WEARING_VIDEO_SOURCES=PLATFORM_CH1_RTSP
-PLATFORM_SETUP_VIDEO_SOURCES=PLATFORM_CH2_RTSP
-PLATFORM_SETUP_MODEL=PLATFORM_CH2_MODEL
+# PLATFORM_SETUP_VIDEO_SOURCES=PLATFORM_CH2_RTSP
+# PLATFORM_SETUP_MODEL=PLATFORM_SETUP_MODEL
 
 #吊篮清洗
 
@@ -104,21 +113,21 @@ PLATFORM_SETUP_MODEL=PLATFORM_CH2_MODEL
 BASKET_CLEANING_CH4_POSE_MODEL='/mnt/xcd/code/ai_test/weights/yolov8s-pose1.pt'
 BASKET_CLEANING_CH5_DETECT_MODEL='/mnt/xcd/code/ai_test/weights/yolov8s1.pt'
 BASKET_CLEANING_CH6_POSE_MODEL='/mnt/xcd/code/ai_test/weights/yolov8s-pose2.pt'
-BASKET_CLEANING_CH6_DETECT_MODEL='/mnt/xcd/code/ai_test/weights/yolov8s2.pt'
+BASKET_CLEANING_CH6_DETECT_MODEL='/mnt/xcd/code/ai_test/weights/ch6detect_basket.pt'
 BASKET_CLEANING_CH6_SEG_MODEL='/mnt/xcd/code/ai_test/weights/basket_seg.pt'
 
 BASKET_CLEANING_CH4_RTSP='rtsp://admin:yaoan1234@172.16.22.237/cam/realmonitor?channel=1&subtype=0'
-BASKET_CLEANING_CH5_RTSP='rtsp://admin:yaoan1234@172.16.22.239/cam/realmonitor?channel=1&subtype=0'
+#BASKET_CLEANING_CH5_RTSP='rtsp://admin:yaoan1234@172.16.22.239/cam/realmonitor?channel=1&subtype=0'
 BASKET_CLEANING_CH6_RTSP='rtsp://admin:yaoan1234@172.16.22.242/cam/realmonitor?channel=1&subtype=0'
 
 BASKET_CLEANING_VIDEO_SOURCES=[BASKET_CLEANING_CH4_RTSP,
-                               BASKET_CLEANING_CH5_RTSP,
+                               #BASKET_CLEANING_CH5_RTSP,
                                BASKET_CLEANING_CH6_RTSP,
                                BASKET_CLEANING_CH6_RTSP,
                                BASKET_CLEANING_CH6_RTSP]
 
 BASKET_CLEANING_MODEL_SOURCES=[BASKET_CLEANING_CH4_POSE_MODEL,
-                               BASKET_CLEANING_CH5_DETECT_MODEL,
+                               #BASKET_CLEANING_CH5_DETECT_MODEL,
                                BASKET_CLEANING_CH6_POSE_MODEL,
                                BASKET_CLEANING_CH6_DETECT_MODEL,
                                BASKET_CLEANING_CH6_SEG_MODEL]
@@ -148,7 +157,7 @@ BASKET_SAFETY_LOCK_REGION = np.array([
     [[650, 944], [800, 1000], [800, 923], [680, 872]]
     ], np.int32)
 BASKET_ELECTRICAL_SYSTEM_REGION = np.array([], np.int32)
-BASKET_CLEANING_OPERATION_REGION = np.array([[668, 310], [800, 310], [800, 1070], [668, 1070]], np.int32)
+BASKET_CLEANING_OPERATION_REGION = np.array([[8, 1038], [14, 1423], [1910, 1432], [1894, 1129]], np.int32)
 BASKET_EMPTY_LOAD_REGION = np.array([(752, 855), (712, 969), (836, 1020), (896, 918)], np.int32)
 
 
@@ -157,9 +166,9 @@ EQUIPMENT_CLEANING_CH3_RTSP='rtsp://admin:yaoan1234@172.16.22.238/cam/realmonito
 EQUIPMENT_CLEANING_CH8_RTSP='rtsp://admin:yaoan1234@172.16.22.44/cam/realmonitor?channel=1&subtype=0'
 
 
-EQUIPMENT_CLEANING_CH3_DETECT_MODEL='/mnt/xcd/code/ai_test/weights/yolov8s1.pt'
+EQUIPMENT_CLEANING_CH3_DETECT_MODEL='/mnt/xcd/code/ai_test/weights/ch6detect_basket.pt'
 EQUIPMENT_CLEANING_CH8_POSE_MODEL='/mnt/xcd/code/ai_test/weights/yolov8s-pose2.pt'
-EQUIPMENT_CLEANING_CH8_DETECT_MODEL='/mnt/xcd/code/ai_test/weights/yolov8s2.pt'
+EQUIPMENT_CLEANING_CH8_DETECT_MODEL='/mnt/xcd/code/ai_test/weights/ch6detect_basket.pt'
 
 EQUIPMENT_CLEANING_VIDEO_SOURCES=[EQUIPMENT_CLEANING_CH3_RTSP,
                                   EQUIPMENT_CLEANING_CH8_RTSP,
@@ -172,12 +181,12 @@ EQUIPMENT_CLEANING_MODEL_SOURCES=[EQUIPMENT_CLEANING_CH3_DETECT_MODEL,
 ]
 
 EQUIPMENT_ANCHOR_DEVICE_REGION = np.array([
-    [[668, 310], [800, 310], [800, 1070], [668, 1070]],
+    [[913, 6], [914, 520], [1350, 523], [1351, 9]],
 ], np.int32)
 EQUIPMENT_WORK_ROPE_REGION = np.array([
-    [[668, 310], [800, 310], [800, 1070], [668, 1070]],
+    [[1466, 1187], [1416, 1248], [2500, 1162], [2502, 1063]],
 ], np.int32)
 EQUIPMENT_SAFETY_ROPE_REGION = np.array([
-    [[668, 310], [800, 310], [800, 1070], [668, 1070]],
+    [[1466, 1187], [1416, 1248], [2500, 1162], [2502, 1063]],
 ], np.int32)
-EQUIPMENT_CLEANING_OPERATION_REGION=np.array([[668, 310], [800, 310], [800, 1070], [668, 1070]], np.int32)
+EQUIPMENT_CLEANING_OPERATION_REGION=np.array([[1697, 930], [1055, 1253], [2000, 1420], [2450, 1000]], np.int32)

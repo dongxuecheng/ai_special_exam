@@ -48,10 +48,14 @@ def save_image_and_redis(redis_client, results, step_name, save_path, post_path)
     save_time = datetime.now().strftime('%Y%m%d_%H%M')
     imgpath = f"{save_path}/{step_name}_{save_time}.jpg"
     annotated_frame = results[0].plot()
-    # if step_name == "equipment_step_2":
-    #     annotated_frame = cv2.polylines(annotated_frame, [region.reshape(-1, 1, 2) for region in BASKET_SUSPENSION_REGION], isClosed=True, color=(0, 255, 0), thickness=4)
-    # elif step_name == "equipment_step_3":
-    #     annotated_frame = cv2.polylines(annotated_frame, [region.reshape(-1, 1, 2) for region in BASKET_STEEL_WIRE_REGION], isClosed=True, color=(0, 255, 0), thickness=4)
+    if step_name == "equipment_step_2":
+        annotated_frame = cv2.polylines(annotated_frame, [region.reshape(-1, 1, 2) for region in EQUIPMENT_ANCHOR_DEVICE_REGION], isClosed=True, color=(0, 255, 0), thickness=4)
+    elif step_name == "equipment_step_4":
+        annotated_frame = cv2.polylines(annotated_frame, [region.reshape(-1, 1, 2) for region in EQUIPMENT_WORK_ROPE_REGION], isClosed=True, color=(0, 255, 0), thickness=4)
+    elif step_name == "equipment_step_5":
+        annotated_frame = cv2.polylines(annotated_frame, [region.reshape(-1, 1, 2) for region in EQUIPMENT_SAFETY_ROPE_REGION], isClosed=True, color=(0, 255, 0), thickness=4)
+    elif step_name == "equipment_step_10":
+        annotated_frame = cv2.polylines(annotated_frame, [region.reshape(-1, 1, 2) for region in EQUIPMENT_CLEANING_OPERATION_REGION], isClosed=True, color=(0, 255, 0), thickness=4)
     # elif step_name == "equipment_step_4":
     #     annotated_frame = cv2.polylines(annotated_frame, BASKET_PLATFORM_REGION.reshape(-1, 1, 2), isClosed=True, color=(0, 255, 0), thickness=4)
     # elif step_name == "equipment_step_6":
@@ -98,6 +102,7 @@ def process_video(model_path, video_source,start_event):
                         label = model.names[cls]
                         if label=='warning_zone':
                             equipment_cleaning_flag[0]=True
+                            print("警戒区")
                         elif label=='person':
                             centerx=(x1+x2)/2
                             centery=(y1+y2)/2
@@ -137,7 +142,7 @@ def process_video(model_path, video_source,start_event):
                                 print("安全绳")
 
                     
-                else:#d8 目标检测
+                elif model_path==EQUIPMENT_CLEANING_MODEL_SOURCES[2]:#d8 目标检测
                     boxes = r.boxes.xyxy  
                     confidences = r.boxes.conf 
                     classes = r.boxes.cls  
@@ -176,7 +181,7 @@ def process_video(model_path, video_source,start_event):
                 if equipment_cleaning_flag[4] and not redis_client.exists("equipment_step_5"):
                     save_image_and_redis(redis_client, results, "equipment_step_5", SAVE_IMG_PATH, POST_IMG_PATH6)
                 
-            else:#d6目标检测
+            elif model_path==EQUIPMENT_CLEANING_MODEL_SOURCES[2]:#d6目标检测
 
                 if equipment_cleaning_flag[8] and not redis_client.exists("equipment_step_9"):
                     save_image_and_redis(redis_client, results, "equipment_step_9", SAVE_IMG_PATH, POST_IMG_PATH6)
