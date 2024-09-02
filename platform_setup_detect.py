@@ -3,6 +3,7 @@ import torch
 from shapely.geometry import box, Polygon
 import threading
 import numpy as np
+import math
 from datetime import datetime
 from ultralytics import YOLO
 
@@ -81,6 +82,7 @@ def process_video(model_path, video_source,start_event):
 
             for r in results:
                 boxes=r.obb.xyxyxyxy
+                boxes1=r.obb.xywhr
                 confidences=r.obb.conf
                 classes=r.obb.cls
                 
@@ -109,6 +111,8 @@ def process_video(model_path, video_source,start_event):
                 # 13=纵向水平杆3
                 # 14=横向水平杆3
                 platform_setup_steps = [0] * 14
+                hengxianggan=0
+                zongxinaggan=0
                 for i in range(len(boxes)):
                     confidence = confidences[i].item()
                     cls = int(classes[i].item())
@@ -120,94 +124,139 @@ def process_video(model_path, video_source,start_event):
                     y_center=(box_coords[0][1] + box_coords[1][1]+box_coords[2][1]+box_coords[3][1]) / 4
                     center_point = (int(x_center), int(y_center))
 
-                    
+                    rotation= math.degrees(boxes1[i][4])
+
+
                     if label=="wheel":#轮子
-                        platform_setup_steps_detect_num[0]+=1
-                        if platform_setup_steps_detect_num[0]>3:
-                            platform_setup_steps[0]+=1
+                        # platform_setup_steps_detect_num[0]+=1
+                        # if platform_setup_steps_detect_num[0]>3:
+                        #     platform_setup_steps[0]+=1
+                        platform_setup_steps[0]+=1
+                        #print(f"轮子{rotation}")
 
-                    elif label=="montant":#立杆
-                        platform_setup_steps_detect_num[1]+=1
-                        if platform_setup_steps_detect_num[1]>3:
-                            platform_setup_steps[1]+=1
-                    elif label=="vertical_bar":#水平横杆,纵杆
+                    elif label=="bar":#立杆
+                        # platform_setup_steps_detect_num[1]+=1
+                        # if platform_setup_steps_detect_num[1]>3:
+                        #     platform_setup_steps[1]+=1
+                        if video_source == PLATFORM_SETUP_VIDEO_SOURCES[0]:
+                            if 70 < rotation < 110:
+                                platform_setup_steps[1] += 1  # 立杆
+                            elif rotation < 10 or rotation > 170:
+                                hengxianggan += 1  # 横向杆
+                            elif 135 < rotation < 150:
+                                platform_setup_steps[8] += 1  # 斜杆
+                            else:
+                                zongxinaggan += 1  # 纵向杆
+                        elif video_source == PLATFORM_SETUP_VIDEO_SOURCES[1]:
+                            if 70 < rotation < 110:
+                                platform_setup_steps[1] += 1  # 立杆
+                            elif 5 < rotation < 25:
+                                hengxianggan += 1  # 横向杆
+                            elif 40 < rotation < 60:
+                                platform_setup_steps[8] += 1  # 斜杆
+                            else:
+                                zongxinaggan += 1  # 纵向杆
+
+
+
+                    # elif label=="vertical_bar":#水平横杆,纵杆
                         
 
-                        is_inside0 = cv2.pointPolygonTest(LEVLEL0_REGION.reshape((-1, 1, 2)), center_point, False)
-                        is_inside1 = cv2.pointPolygonTest(LEVLEL1_REGION.reshape((-1, 1, 2)), center_point, False)
-                        is_inside2 = cv2.pointPolygonTest(LEVLEL2_REGION.reshape((-1, 1, 2)), center_point, False)
-                        is_inside3 = cv2.pointPolygonTest(LEVLEL3_REGION.reshape((-1, 1, 2)), center_point, False)
-                        #print(is_inside)
-                        if is_inside0>=0 :
-                            platform_setup_steps_detect_num[2]+=1
-                            if platform_setup_steps_detect_num[2]>3:
-                                platform_setup_steps[2]+=1 #表示纵向扫地杆
-                        elif is_inside1>=0:
-                            platform_setup_steps_detect_num[4]+=1
-                            if platform_setup_steps_detect_num[4]>3:
-                                platform_setup_steps[4]+=1#5=纵向水平杆1
-                        elif is_inside2>=0:
-                            platform_setup_steps_detect_num[6]+=1
-                            if platform_setup_steps_detect_num[6]>3:
-                                platform_setup_steps[6]+=1#7=纵向水平杆2
-                        elif is_inside3>=0:
-                            platform_setup_steps_detect_num[12]+=1
-                            if platform_setup_steps_detect_num[12]>3:
-                                platform_setup_steps[12]+=1#13=纵向水平杆3
+                    #     is_inside0 = cv2.pointPolygonTest(LEVLEL0_REGION.reshape((-1, 1, 2)), center_point, False)
+                    #     is_inside1 = cv2.pointPolygonTest(LEVLEL1_REGION.reshape((-1, 1, 2)), center_point, False)
+                    #     is_inside2 = cv2.pointPolygonTest(LEVLEL2_REGION.reshape((-1, 1, 2)), center_point, False)
+                    #     is_inside3 = cv2.pointPolygonTest(LEVLEL3_REGION.reshape((-1, 1, 2)), center_point, False)
+                    #     #print(is_inside)
+                    #     if is_inside0>=0 :
+                    #         platform_setup_steps_detect_num[2]+=1
+                    #         if platform_setup_steps_detect_num[2]>3:
+                    #             platform_setup_steps[2]+=1 #表示纵向扫地杆
+                    #     elif is_inside1>=0:
+                    #         platform_setup_steps_detect_num[4]+=1
+                    #         if platform_setup_steps_detect_num[4]>3:
+                    #             platform_setup_steps[4]+=1#5=纵向水平杆1
+                    #     elif is_inside2>=0:
+                    #         platform_setup_steps_detect_num[6]+=1
+                    #         if platform_setup_steps_detect_num[6]>3:
+                    #             platform_setup_steps[6]+=1#7=纵向水平杆2
+                    #     elif is_inside3>=0:
+                    #         platform_setup_steps_detect_num[12]+=1
+                    #         if platform_setup_steps_detect_num[12]>3:
+                    #             platform_setup_steps[12]+=1#13=纵向水平杆3
                         
 
-                    elif label=="horizontal_bar":#水平纵杆
+                    # elif label=="horizontal_bar":#水平纵杆
 
-                        is_inside0 = cv2.pointPolygonTest(LEVLEL0_REGION.reshape((-1, 1, 2)), center_point, False)
-                        is_inside1 = cv2.pointPolygonTest(LEVLEL1_REGION.reshape((-1, 1, 2)), center_point, False)
-                        is_inside2 = cv2.pointPolygonTest(LEVLEL2_REGION.reshape((-1, 1, 2)), center_point, False)
-                        is_inside3 = cv2.pointPolygonTest(LEVLEL3_REGION.reshape((-1, 1, 2)), center_point, False)
-                        #print(is_inside)
-                        if is_inside0>=0 :
-                            platform_setup_steps_detect_num[3]+=1
-                            if platform_setup_steps_detect_num[3]>3:
-                                platform_setup_steps[3]+=1#4=横向扫地杆
-                        elif is_inside1>=0:
-                            platform_setup_steps_detect_num[5]+=1
-                            if platform_setup_steps_detect_num[5]>3:
-                                platform_setup_steps[5]+=1#6=横向水平杆1
-                        elif is_inside2>=0:
-                            platform_setup_steps_detect_num[7]+=1
-                            if platform_setup_steps_detect_num[7]>3:
-                                platform_setup_steps[7]+=1# 8=横向水平杆2
-                        elif is_inside3>=0:
-                            platform_setup_steps_detect_num[13]+=1
-                            if platform_setup_steps_detect_num[13]>3:
-                                platform_setup_steps[13]+=1#14=横向水平杆3
+                    #     is_inside0 = cv2.pointPolygonTest(LEVLEL0_REGION.reshape((-1, 1, 2)), center_point, False)
+                    #     is_inside1 = cv2.pointPolygonTest(LEVLEL1_REGION.reshape((-1, 1, 2)), center_point, False)
+                    #     is_inside2 = cv2.pointPolygonTest(LEVLEL2_REGION.reshape((-1, 1, 2)), center_point, False)
+                    #     is_inside3 = cv2.pointPolygonTest(LEVLEL3_REGION.reshape((-1, 1, 2)), center_point, False)
+                    #     #print(is_inside)
+                    #     if is_inside0>=0 :
+                    #         platform_setup_steps_detect_num[3]+=1
+                    #         if platform_setup_steps_detect_num[3]>3:
+                    #             platform_setup_steps[3]+=1#4=横向扫地杆
+                    #     elif is_inside1>=0:
+                    #         platform_setup_steps_detect_num[5]+=1
+                    #         if platform_setup_steps_detect_num[5]>3:
+                    #             platform_setup_steps[5]+=1#6=横向水平杆1
+                    #     elif is_inside2>=0:
+                    #         platform_setup_steps_detect_num[7]+=1
+                    #         if platform_setup_steps_detect_num[7]>3:
+                    #             platform_setup_steps[7]+=1# 8=横向水平杆2
+                    #     elif is_inside3>=0:
+                    #         platform_setup_steps_detect_num[13]+=1
+                    #         if platform_setup_steps_detect_num[13]>3:
+                    #             platform_setup_steps[13]+=1#14=横向水平杆3
 
-                    elif label=="diagonal":#斜撑
+                    # elif label=="diagonal":#斜撑
 
-                        is_inside = cv2.pointPolygonTest(DIAGONAL_REGION.reshape((-1, 1, 2)), center_point, False)
-                        if is_inside>=0:
-                            platform_setup_steps_detect_num[8]+=1
-                            if platform_setup_steps_detect_num[8]>3:
-                                platform_setup_steps[8]+=1# 9=斜撑
+                    #     is_inside = cv2.pointPolygonTest(DIAGONAL_REGION.reshape((-1, 1, 2)), center_point, False)
+                    #     if is_inside>=0:
+                    #         platform_setup_steps_detect_num[8]+=1
+                    #         if platform_setup_steps_detect_num[8]>3:
+                    #             platform_setup_steps[8]+=1# 9=斜撑
                     
 
                     elif label=="ladder":#梯子
                         #10=爬梯
-                        platform_setup_steps_detect_num[9]+=1
-                        if platform_setup_steps_detect_num[9]>3:
-                            platform_setup_steps[9]+=1
+                        # platform_setup_steps_detect_num[9]+=1
+                        # if platform_setup_steps_detect_num[9]>3:
+                        platform_setup_steps[9]+=1
                         
                     elif label=="scaffold":#脚手板
                         #11=脚手板
-                        platform_setup_steps_detect_num[10]+=1
-                        if platform_setup_steps_detect_num[10]>3:
-                            platform_setup_steps[10]+=1
+                        # platform_setup_steps_detect_num[10]+=1
+                        # if platform_setup_steps_detect_num[10]>3:
+                        platform_setup_steps[10]+=1
 
 
                     elif label=="toe_board":#档脚板
                         #12=挡脚板
-                        platform_setup_steps_detect_num[11]+=1
-                        if platform_setup_steps_detect_num[11]>3:
-                            platform_setup_steps[11]+=1
+                        # platform_setup_steps_detect_num[11]+=1
+                        # if platform_setup_steps_detect_num[11]>3:
+                        platform_setup_steps[11]+=1
 
+                if hengxianggan >= 2:
+                    platform_setup_steps[3] = 2
+                if hengxianggan >= 4:
+                    platform_setup_steps[5] = 2
+                if hengxianggan >= 6:
+                    platform_setup_steps[7] = 2
+                if hengxianggan >= 8:
+                    platform_setup_steps[13] = 2
+                
+                if zongxinaggan>=2:
+                    platform_setup_steps[2]=2
+                if zongxinaggan>=4:
+                    platform_setup_steps[4]=2
+                if zongxinaggan>=6:
+                    platform_setup_steps[6]=2
+                if zongxinaggan>=8:
+                    platform_setup_steps[12]=2
+
+                # print(hengxianggan)
+                # print(zongxinaggan)
                 #print(platform_setup_steps)
                 #print('----------------------')
                 # Print the platform setup steps

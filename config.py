@@ -83,10 +83,11 @@ PLATFORM_CH4_RTSP='rtsp://admin:yaoan1234@172.16.22.233/cam/realmonitor?channel=
 
 PLATFORM_CH1_MODEL='/mnt/xcd/code/ai_test/weights/platform_ch1_wearing.pt'
 
-PLATFORM_SETUP_MODEL='/mnt/xcd/code/ai_test/weights/obb830.pt'
+PLATFORM_SETUP_MODEL='/mnt/xcd/code/ai_test/weights/obb_9_2.pt'
 PLATFORM_SETUP_VIDEO_SOURCES=[PLATFORM_CH2_RTSP,
                               #PLATFORM_CH3_RTSP,
-                              PLATFORM_CH4_RTSP]
+                              PLATFORM_CH4_RTSP
+]
 
 PLATFORM_WEARING_MODEL=[
     HUMAN_DETECTION_MODEL,

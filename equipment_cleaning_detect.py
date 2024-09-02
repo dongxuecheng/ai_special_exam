@@ -159,7 +159,7 @@ def process_video(model_path, video_source,start_event):
                             is_inside = any(point_in_region(point,EQUIPMENT_CLEANING_OPERATION_REGION) for point in points)#刷子是否在指定区域
                             if is_inside:
                                 equipment_cleaning_flag[9]=True
-
+            
             if model_path==EQUIPMENT_CLEANING_MODEL_SOURCES[0]:
                 if equipment_cleaning_flag[0] and not redis_client.exists("equipment_step_1"):
                     save_image_and_redis(redis_client, results, "equipment_step_1", SAVE_IMG_PATH, POST_IMG_PATH6)
