@@ -61,7 +61,7 @@ def equipment_cleaning_status():#获取平台搭设状态状态
         return jsonify({"status": "SUCCESS","data":json_array}), 200
 
 
-@app.route('/basket_cleaning_finish', methods=['GET']) 
+@app.route('/equipment_cleaning_finish', methods=['GET']) 
 def equipment_cleaning_finish():#开始登录时，检测是否需要复位，若需要，则发送复位信息，否则开始焊接检测
 
     stop_inference_internal()

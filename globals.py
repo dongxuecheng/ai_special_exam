@@ -91,3 +91,4 @@ basket_cleaning_up_flag=False#吊篮清理现场
 
 #单人吊具
 equipment_cleaning_flag=[False]*12
+person_position=[0,0,0,0]
