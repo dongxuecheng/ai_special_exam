@@ -55,7 +55,7 @@ def process_video(model_path, video_source,start_event):
             if cap.get(cv2.CAP_PROP_POS_FRAMES) % 25 != 0:
                 continue
             
-            if video_source == WELDING_CH2_RTSP or video_source == WELDING_CH4_RTSP:#这两个视频流用的分类模型，因为分类模型预处理较慢，需要手动resize
+            if video_source == WELDING_CH2_RTSP:#这两个视频流用的分类模型，因为分类模型预处理较慢，需要手动resize
                 frame=cv2.resize(frame,(640,640))
             
             results = model.predict(frame,verbose=False,conf=0.4)
@@ -88,16 +88,16 @@ def process_video(model_path, video_source,start_event):
 
 
                 #if video_source == WELDING_CH3_RTSP:#油桶
-                if video_source == WELDING_CH4_RTSP:#总开关
-                    if r.probs.top1conf>0.8:
-                        label=model.names[r.probs.top1]#获取最大概率的类别的label
-                        main_switch = "open" if label == "open" else "close"
-                    else:
-                        continue   
+                # if video_source == WELDING_CH4_RTSP:#总开关
+                #     if r.probs.top1conf>0.8:
+                #         label=model.names[r.probs.top1]#获取最大概率的类别的label
+                #         main_switch = "open" if label == "open" else "close"
+                #     else:
+                #         continue   
 
 
                 
-                if video_source == WELDING_CH1_RTSP or video_source==WELDING_CH3_RTSP or video_source==WELDING_CH5_RTSP:#焊接操作，进行目标检测
+                if video_source == WELDING_CH1_RTSP or video_source==WELDING_CH3_RTSP or video_source==WELDING_CH5_RTSP or video_source==WELDING_CH4_RTSP:#焊接操作，进行目标检测
                     ##下面这些都是tensor类型
                     boxes = r.boxes.xyxy  # 提取所有检测到的边界框坐标
                     confidences = r.boxes.conf  # 提取所有检测到的置信度
@@ -130,6 +130,11 @@ def process_video(model_path, video_source,start_event):
 
                         if label== "open" or "close":#检测焊机开关
                             welding_machine_switch = label
+
+                        if label=="turnon":
+                            main_switch="open"
+                        if label=="turnoff":
+                            main_switch="close"
 
                         if label=="grounding_wire" :
                             if confidence<0.6:

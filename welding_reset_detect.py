@@ -57,7 +57,7 @@ def process_video(model_path, video_source, start_event):
             if cap.get(cv2.CAP_PROP_POS_FRAMES) % 25 != 0:#跳帧检测，
                 continue
 
-            if video_source == WELDING_CH2_RTSP or video_source == WELDING_CH4_RTSP:#这两个视频流用的分类模型，因为分类模型预处理较慢，需要手动resize
+            if video_source == WELDING_CH2_RTSP:#这两个视频流用的分类模型，因为分类模型预处理较慢，需要手动resize
                 frame=cv2.resize(frame,(640,640))
 
             # Run YOLOv8 inference on the frame
@@ -84,25 +84,25 @@ def process_video(model_path, video_source, start_event):
                     else:
                         continue
 
-                if video_source == WELDING_CH4_RTSP:
-                    if r.probs.top1conf>0.6:
-                        label=model.names[r.probs.top1]#获取最大概率的类别的label
+                # if video_source == WELDING_CH4_RTSP:
+                #     if r.probs.top1conf>0.6:
+                #         label=model.names[r.probs.top1]#获取最大概率的类别的label
                         
-                        main_switch_flag = True if label == "open" else False
-                    else:
-                        continue
+                #         main_switch_flag = True if label == "open" else False
+                #     else:
+                #         continue
 
-                if video_source == WELDING_CH5_RTSP or video_source == WELDING_CH3_RTSP or video_source == WELDING_CH1_RTSP:
+                if video_source == WELDING_CH5_RTSP or video_source == WELDING_CH3_RTSP or video_source == WELDING_CH1_RTSP or video_source == WELDING_CH4_RTSP:
                     ##下面这些都是tensor类型
                     boxes = r.boxes.xyxy  # 提取所有检测到的边界框坐标
                     confidences = r.boxes.conf  # 提取所有检测到的置信度
                     classes = r.boxes.cls  # 提取所有检测到的类别索引
 
-                    if video_source == WELDING_CH5_RTSP:
-                        ground_wire_flag=False
-                        #welding_components_flag=False
-                    if video_source == WELDING_CH3_RTSP:
-                        oil_barrel_flag=True
+                    # if video_source == WELDING_CH5_RTSP:
+                    #     ground_wire_flag=False
+                    #     #welding_components_flag=False
+                    # #if video_source == WELDING_CH3_RTSP:
+                        
 
                     for i in range(len(boxes)):
                         x1, y1, x2, y2 = boxes[i].tolist()
@@ -122,7 +122,11 @@ def process_video(model_path, video_source, start_event):
                             else:
                                 oil_barrel_flag=True 
 
-                        
+                        if label=='turnon':
+                            main_switch_flag=True
+                        if label=='turnoff':
+                            main_switch_flag=False
+
                         if label== "open":#检测焊机开关
                             welding_machine_switch_flag = True
 
@@ -176,6 +180,7 @@ def process_video(model_path, video_source, start_event):
                         post_path = f"{POST_IMG_PATH2}/welding_resetStep1_{save_time}.jpg"
                         redis_client.rpush("welding_reset_post_path",post_path)
                         annotated_frame = results[0].plot()
+                        cv2.polylines(annotated_frame,[WELDING_REGION2.reshape(-1,1,2)],isClosed=True,color=(0,255,0),thickness=4)
                         cv2.imwrite(imgpath, annotated_frame)
                         #reset_post(welding_resetStep='1',path=post_path)
                         #post(step='2',path=post_path)
@@ -191,6 +196,7 @@ def process_video(model_path, video_source, start_event):
                             redis_client.rpush("welding_reset_post_path",post_path)
                             #cv2.imwrite(imgpath, annotator.result())
                             annotated_frame = results[0].plot()
+                            cv2.polylines(annotated_frame,[WELDING_REGION3.reshape(-1,1,2)],isClosed=True,color=(0,255,0),thickness=4)
                             cv2.imwrite(imgpath, annotated_frame)
                             #reset_post(welding_resetStep='5',path=post_path)
                             #post(step='2',path=post_path)

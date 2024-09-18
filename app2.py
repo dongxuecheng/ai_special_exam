@@ -21,7 +21,7 @@ def reset_detection():#发送开启AI服务时，检测复位
         #redis_client.set("log_in_flag",'False')
 
         stop_event.clear()
-
+        init_rest_detection()
         start_events = []#给每个线程一个事件，让我知道某个线程是否开始检测
         inference_thread = threading.Thread(target=start_reset_detection,args=(start_events,))
         inference_thread.start()
@@ -29,7 +29,7 @@ def reset_detection():#发送开启AI服务时，检测复位
             
         app.logger.info('start_reset_detection')
     
-        init_rest_detection()
+        
         #init_rest()#设置复位检测图片保存标志为False
         #redis_client.set("log_in_flag",'True')#设置登录标志为True,进入保存图片阶段
         #time.sleep(8)#等待3s，等待reset_post_path列表中有数据,然后返回给前端
@@ -79,12 +79,12 @@ def welding_detection():#开始登录时，检测是否需要复位，若需要�
     if inference_thread is None or not inference_thread.is_alive():#防止重复开启检测服务
 
         stop_event.clear()#stop_event不用global声明，因为不需要重新赋值，他只是调用了其方法，并没有重新赋值
-
+        init_welding_detection()
         start_events = []#给每个线程一个事件，让我知道某个线程是否开始检测
         inference_thread = threading.Thread(target=start_welding_detection,args=(start_events,))
         inference_thread.start()
 
-        init_welding_detection()
+        
         
         #等待所有YOLO线程开始检测
         for event in start_events:
@@ -159,6 +159,5 @@ def get_image(filename):
 
 
 if __name__ == '__main__':
-
     # Start the Flask server
     app.run(debug=False, host='172.16.20.163', port=5002)
