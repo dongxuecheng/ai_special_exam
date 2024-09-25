@@ -30,8 +30,9 @@ def init_basket_cleaning_detection():
     basket_empty_load_flag=False
     basket_person_flag=False
     
-    for i in range(1, 12):
+    for i in range(1, 13):
         redis_client.delete(f"basket_step_{i}")
+        print(f"删除{f'basket_step_{i}'}")
     redis_client.delete("basket_cleaning_order")
 
     pass
@@ -215,7 +216,7 @@ def process_video(model_path, video_source,start_event):
                         if not basket_lifting_flag:
                             is_inside1 = any(point_in_region(point, BASKET_LIFTING_REGION_L) for point in points)
                             is_inside2 = any(point_in_region(point, BASKET_LIFTING_REGION_R) for point in points)
-                            print(is_inside1,is_inside2)   
+                            #print(is_inside1,is_inside2)   
                             if is_inside1 or is_inside2:
                                 basket_lifting_flag=True
                                 print("提升机")
@@ -247,14 +248,15 @@ def process_video(model_path, video_source,start_event):
                         confidence = confidences[i].item()
                         cls = int(classes[i].item())
                         label = model.names[cls]
-                        if label=='safety_belt':
-                            basket_safety_belt_flag=True
-                        elif label=='brush':
 
-                            #is_inside = any(point_in_region([(x1+x2)/2,(y1+y2)/2],BASKET_CLEANING_OPERATION_REGION) for point in points)
+                        if label=='brush':
+
+                            #is_inside = any(point_in_region([(x1+x2)/2,(y1+y2)/2],BASKET_CLEANING_OPERATION_REGION))
                             is_inside = point_in_region([(x1+x2)/2,(y1+y2)/2],BASKET_CLEANING_OPERATION_REGION)
                             if is_inside:
                                 basket_cleaning_operation_flag=True
+                                print("清洗作业")
+                            #print("刷子")
 
                         elif label=='warning_zone':
                             centerx=(x1+x2)/2
@@ -262,6 +264,8 @@ def process_video(model_path, video_source,start_event):
                             point_in_region_flag=point_in_region([centerx,centery],BASKET_WARNING_ZONE_REGION)#警戒区划分区域
                             if point_in_region_flag and not basket_warning_zone_flag:
                                 basket_warning_zone_flag=True
+                        if label=='safety_belt' and basket_warning_zone_flag:#
+                            basket_safety_belt_flag=True
 
                 elif model_path==BASKET_CLEANING_MODEL_SOURCES[3]:#d6分割
                     boxes = r.boxes.xyxy
@@ -312,6 +316,7 @@ def process_video(model_path, video_source,start_event):
                     print("警戒区消失")
                 elif basket_safety_belt_flag and not redis_client.exists("basket_step_9"):
                     save_image_and_redis(redis_client, results, "basket_step_9", SAVE_IMG_PATH, POST_IMG_PATH5)
+                    print("检查安全带挂设")
                 elif basket_cleaning_operation_flag and not redis_client.exists("basket_step_10"):
                     save_image_and_redis(redis_client, results, "basket_step_10", SAVE_IMG_PATH, POST_IMG_PATH5)
                     print("清洗作业")
