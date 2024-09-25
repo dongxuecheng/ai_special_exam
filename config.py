@@ -114,7 +114,7 @@ PLATFORM_WEARING_VIDEO_SOURCES=PLATFORM_CH1_RTSP
 BASKET_CLEANING_CH4_POSE_MODEL='/mnt/xcd/code/ai_special_exam/weights/yolov8s-pose1.pt'
 BASKET_CLEANING_CH5_DETECT_MODEL='/mnt/xcd/code/ai_special_exam/weights/yolov8s1.pt'
 BASKET_CLEANING_CH6_POSE_MODEL='/mnt/xcd/code/ai_special_exam/weights/yolov8s-pose2.pt'
-BASKET_CLEANING_CH6_DETECT_MODEL='/mnt/xcd/code/ai_special_exam/weights/ch6detect_basket_9_6_1.pt'
+BASKET_CLEANING_CH6_DETECT_MODEL='/mnt/xcd/code/ai_special_exam/weights/ch6detect_basker_9_14_a.pt'
 BASKET_CLEANING_CH6_SEG_MODEL='/mnt/xcd/code/ai_special_exam/weights/basket_seg_9_13.pt'
 
 BASKET_CLEANING_CH4_RTSP='rtsp://admin:yaoan1234@172.16.22.237/cam/realmonitor?channel=1&subtype=0'
@@ -160,7 +160,7 @@ BASKET_SAFETY_LOCK_REGION = np.array([
     [[650, 944], [800, 1000], [800, 923], [680, 872]]
     ], np.int32)
 BASKET_ELECTRICAL_SYSTEM_REGION = np.array([], np.int32)
-BASKET_CLEANING_OPERATION_REGION = np.array([[8, 1038], [14, 1423], [1910, 1432], [1894, 1129]], np.int32)
+BASKET_CLEANING_OPERATION_REGION = np.array([[6, 954], [4, 1437], [1054, 1436], [1051, 954]], np.int32)
 BASKET_EMPTY_LOAD_REGION = np.array([(752, 855), (712, 969), (836, 1020), (896, 918)], np.int32)
 BASKET_WARNING_ZONE_REGION=np.array([(1250, 0), (1256, 469), (2048, 492), (2048, 0)], np.int32)
 
@@ -170,11 +170,11 @@ EQUIPMENT_CLEANING_CH8_RTSP='rtsp://admin:yaoan1234@172.16.22.44/cam/realmonitor
 #EQUIPMENT_CLEANING_CH10_RTSP='rtsp://admin:yaoan1234@172.16.22.44/cam/realmonitor?channel=1&subtype=0'
 
 
-EQUIPMENT_CLEANING_CH3_DETECT_MODEL1='/mnt/xcd/code/ai_special_exam/weights/ch6detect_basket_9_6_1.pt'
+EQUIPMENT_CLEANING_CH3_DETECT_MODEL1='/mnt/xcd/code/ai_special_exam/weights/ch6detect_basker_9_14_a.pt'
 EQUIPMENT_CLEANING_CH3_DETECT_MODEL2='/mnt/xcd/code/ai_special_exam/weights/yolov8s.pt'
 #EQUIPMENT_CLEANING_CH10_DETECT_MODEL1='/mnt/xcd/code/ai_special_exam/weights/ch6detect_basket_9_6_1.pt'
 EQUIPMENT_CLEANING_CH8_POSE_MODEL='/mnt/xcd/code/ai_special_exam/weights/yolov8s-pose2.pt'
-EQUIPMENT_CLEANING_CH8_DETECT_MODEL='/mnt/xcd/code/ai_special_exam/weights/ch6detect_basket_9_6_1.pt'
+EQUIPMENT_CLEANING_CH8_DETECT_MODEL='/mnt/xcd/code/ai_special_exam/weights/ch6detect_basker_9_14_a_1.pt'
 
 EQUIPMENT_CLEANING_VIDEO_SOURCES=[EQUIPMENT_CLEANING_CH3_RTSP,
                                   EQUIPMENT_CLEANING_CH3_RTSP,
@@ -203,4 +203,4 @@ EQUIPMENT_WORK_ROPE_REGION = np.array([
 EQUIPMENT_SAFETY_ROPE_REGION = np.array([
     [[1300, 1215], [1937, 1282], [2134, 1071], [1700, 1100]],
 ], np.int32)
-EQUIPMENT_CLEANING_OPERATION_REGION=np.array([[1697, 930], [1055, 1253], [2000, 1420], [2450, 1000]], np.int32)
+EQUIPMENT_CLEANING_OPERATION_REGION=np.array([[1056, 758], [1061, 1427], [2554, 1414], [2536, 763]], np.int32)
