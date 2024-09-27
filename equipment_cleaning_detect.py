@@ -106,15 +106,16 @@ def process_video(model_path, video_source,start_event):
                         confidence = confidences[i].item()
                         cls = int(classes[i].item())
                         label = model.names[cls]
-                        if label=='warning_zone' and confidence>0.7:
+                        if label=='warning_zone' and confidence>0.5:
                             
                             centerx=(x1+x2)/2
                             centery=(y1+y2)/2
                             equipment_warning_zone_flag=True
                             point_in_region_flag=point_in_region([centerx,centery],EQUIPMENT_WARNING_ZONE_REGION)#警戒区划分区域
-                            if point_in_region_flag and not equipment_cleaning_flag[0]:
+                            if point_in_region_flag:
                                 equipment_cleaning_flag[0]=True
                                 equipment_warning_zone_flag=True
+                                equipment_cleaning_flag[11]=False
                                 #print("警戒区")
 
 
@@ -146,6 +147,7 @@ def process_video(model_path, video_source,start_event):
 
                     if not equipment_warning_zone_flag and equipment_cleaning_flag[0]:#当检测不到警戒区时,判定未拆除警戒区域
                         equipment_cleaning_flag[11]=True
+                        print("拆除警戒区域-----------")
 
 
                 elif model_path==EQUIPMENT_CLEANING_MODEL_SOURCES[1]:#D3 detect
@@ -208,7 +210,7 @@ def process_video(model_path, video_source,start_event):
                         label = model.names[cls]
                         # if label=='safety_belt':
                         #     equipment_cleaning_flag[8]=True
-                        if label=='brush':
+                        if label=='brush' and confidence>0.5:
                             brush_flag=True
                             print("检测到刷子")
                             is_inside = point_in_region([(x1+x2)/2,(y1+y2)/2],EQUIPMENT_CLEANING_OPERATION_REGION)#刷子是否在指定区域
@@ -242,7 +244,7 @@ def process_video(model_path, video_source,start_event):
                 if equipment_cleaning_flag[8] and not redis_client.exists("equipment_step_9"):
                     save_image_and_redis(redis_client, results, "equipment_step_9", SAVE_IMG_PATH, POST_IMG_PATH6)
                     print("安全带挂设")
-                if equipment_cleaning_flag[11] and equipment_cleaning_flag[9] and not redis_client.exists("equipment_step_12"):
+                if equipment_cleaning_flag[11] and not redis_client.exists("equipment_step_12"):
                     save_image_and_redis(redis_client, results, "equipment_step_12", SAVE_IMG_PATH, POST_IMG_PATH6)
                     print("拆除警戒区域")
                 if equipment_cleaning_flag[10] and equipment_cleaning_flag[11] and equipment_cleaning_flag[9]  and not redis_client.exists("equipment_step_11"):
