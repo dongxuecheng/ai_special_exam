@@ -16,6 +16,21 @@ from globals import oil_barrel,main_switch,grounding_wire,welding_machine_switch
 
 def init_welding_detection():
     global steps
+    global oil_barrel,main_switch,grounding_wire,welding_machine_switch,welding_components,mask,welding,gloves,sweep
+    global sweep_detect_num,welding_detect_num
+    oil_barrel=None
+    main_switch=None
+    grounding_wire=None
+    welding_machine_switch=None
+    welding_components=None
+    mask=None
+    welding=None
+    gloves=None
+    sweep=None
+
+    sweep_detect_num=0
+    welding_detect_num=0
+    
     steps = [False] * 13
     redis_client.delete("welding_post_path")
 

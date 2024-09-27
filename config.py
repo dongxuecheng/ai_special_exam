@@ -112,23 +112,23 @@ PLATFORM_WEARING_VIDEO_SOURCES=PLATFORM_CH1_RTSP
 
 
 BASKET_CLEANING_CH4_POSE_MODEL='/mnt/xcd/code/ai_special_exam/weights/yolov8s-pose1.pt'
-BASKET_CLEANING_CH5_DETECT_MODEL='/mnt/xcd/code/ai_special_exam/weights/yolov8s1.pt'
+BASKET_CLEANING_CH5_DETECT_MODEL='/mnt/xcd/code/ai_special_exam/weights/ch6detect_basker_9_14_a_1.pt'
 BASKET_CLEANING_CH6_POSE_MODEL='/mnt/xcd/code/ai_special_exam/weights/yolov8s-pose2.pt'
 BASKET_CLEANING_CH6_DETECT_MODEL='/mnt/xcd/code/ai_special_exam/weights/ch6detect_basker_9_14_a.pt'
 BASKET_CLEANING_CH6_SEG_MODEL='/mnt/xcd/code/ai_special_exam/weights/basket_seg_9_13.pt'
 
 BASKET_CLEANING_CH4_RTSP='rtsp://admin:yaoan1234@172.16.22.237/cam/realmonitor?channel=1&subtype=0'
-#BASKET_CLEANING_CH5_RTSP='rtsp://admin:yaoan1234@172.16.22.239/cam/realmonitor?channel=1&subtype=0'
-BASKET_CLEANING_CH6_RTSP='rtsp://admin:yaoan1234@172.16.22.242/cam/realmonitor?channel=1&subtype=0/stream?tcp'
+BASKET_CLEANING_CH5_RTSP='rtsp://admin:yaoan1234@172.16.22.239/cam/realmonitor?channel=1&subtype=0'
+BASKET_CLEANING_CH6_RTSP='rtsp://admin:yaoan1234@172.16.22.242/cam/realmonitor?channel=1&subtype=0'
 
 BASKET_CLEANING_VIDEO_SOURCES=[BASKET_CLEANING_CH4_RTSP,
-                               #BASKET_CLEANING_CH5_RTSP,
+                               BASKET_CLEANING_CH5_RTSP,
                                BASKET_CLEANING_CH6_RTSP,
                                BASKET_CLEANING_CH6_RTSP,
                                BASKET_CLEANING_CH6_RTSP]
 
 BASKET_CLEANING_MODEL_SOURCES=[BASKET_CLEANING_CH4_POSE_MODEL,
-                               #BASKET_CLEANING_CH5_DETECT_MODEL,
+                               BASKET_CLEANING_CH5_DETECT_MODEL,
                                BASKET_CLEANING_CH6_POSE_MODEL,
                                BASKET_CLEANING_CH6_DETECT_MODEL,
                                BASKET_CLEANING_CH6_SEG_MODEL]

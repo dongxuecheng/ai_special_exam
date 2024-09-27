@@ -16,7 +16,7 @@ from globals import basket_electrical_system_flag,basket_lifting_flag,basket_saf
 
 
 def init_basket_cleaning_detection():
-    global basket_suspension_flag,basket_warning_zone_flag,basket_steel_wire_flag,basket_platform_flag,basket_electrical_system_flag,basket_lifting_flag,basket_safety_lock_flag,basket_safety_belt_flag,basket_cleaning_up_flag,basket_cleaning_operation_flag,basket_empty_load_flag,basket_person_flag
+    global basket_suspension_flag,basket_warning_zone_flag,basket_steel_wire_flag,basket_platform_flag,basket_electrical_system_flag,basket_lifting_flag,basket_safety_lock_flag,basket_safety_belt_flag,basket_cleaning_up_flag,basket_cleaning_operation_flag,basket_empty_load_flag,basket_person_flag,basket_warning_zone_exist_flag
     basket_suspension_flag=False
     basket_warning_zone_flag=False
     basket_steel_wire_flag=False
@@ -29,6 +29,7 @@ def init_basket_cleaning_detection():
     basket_cleaning_operation_flag=False
     basket_empty_load_flag=False
     basket_person_flag=False
+    basket_warning_zone_exist_flag=False
     
     for i in range(1, 13):
         redis_client.delete(f"basket_step_{i}")
@@ -91,44 +92,7 @@ def save_image_and_redis(redis_client, results, step_name, save_path, post_path)
     redis_client.set(step_name, postpath)
     redis_client.rpush("basket_cleaning_order", step_name)
 
-# def get_region_mean_color(regions_security_lock_and_work_area, img):
-#     for region in regions_security_lock_and_work_area:
-#         points = np.array(region, dtype=np.int32)
-#         mask = np.zeros(img.shape[:2], dtype=np.uint8)
-#         cv2.fillPoly(mask, [points], 255)
-#         roi = cv2.bitwise_and(img, img, mask=mask)
-#         mean_color = cv2.mean(roi)
 
-#         # 将BGR颜色均值再平均
-#         average_color_value = sum(mean_color[:3]) / 3
-
-#         # 判断平均值是否大于0.30
-#         if average_color_value < 0.30:
-#             return True
-#         else:
-#             return False
-
-# 创建队列来存储视频帧
-# frame_queue1 = queue.Queue(maxsize=10)
-# frame_queue2 = queue.Queue(maxsize=10)
-# frame_queue3 = queue.Queue(maxsize=10)
-
-# def read_rtsp_stream(rtsp_url):
-#     """从 RTSP 流读取视频帧"""
-#     cap = cv2.VideoCapture(rtsp_url)
-#     while cap.isOpened():
-#         ret, frame = cap.read()
-#         if not ret:
-#             break
-#         if cap.get(cv2.CAP_PROP_POS_FRAMES) % 25 != 0:
-#             continue
-#         if not frame_queue1.full():
-#             frame_queue1.put(frame)  # 将读取到的帧放入队列
-#         elif not frame_queue2.full():
-#             frame_queue2.put(frame)
-#         elif not frame_queue3.full():
-#             frame_queue3.put(frame)
-#     cap.release()
 
 def process_video(model_path, video_source,start_event):
     model = YOLO(model_path)
@@ -147,7 +111,8 @@ def process_video(model_path, video_source,start_event):
 
             results = model.predict(frame,conf=0.4,verbose=False)
 
-            global basket_suspension_flag,basket_warning_zone_flag,basket_steel_wire_flag,basket_platform_flag,basket_electrical_system_flag,basket_lifting_flag,basket_safety_lock_flag,basket_safety_belt_flag,basket_cleaning_up_flag,basket_cleaning_operation_flag,basket_empty_load_flag,basket_person_flag
+            global basket_suspension_flag,basket_warning_zone_flag,basket_steel_wire_flag,basket_platform_flag,basket_electrical_system_flag,basket_lifting_flag
+            global basket_safety_lock_flag,basket_safety_belt_flag,basket_cleaning_up_flag,basket_cleaning_operation_flag,basket_empty_load_flag,basket_person_flag,basket_warning_zone_exist_flag
             global BASKET_PLATFORM_REGION,BASKET_LIFTING_REGION_L,BASKET_LIFTING_REGION_R,BASKET_ELECTRICAL_SYSTEM_REGION,BASKET_WARNING_ZONE_REGION
             for r in results:
                 if model_path==BASKET_CLEANING_MODEL_SOURCES[0] and not basket_suspension_flag:#D4悬挂机构
@@ -184,8 +149,39 @@ def process_video(model_path, video_source,start_event):
                 #             basket_cleaning_up_flag=True
                         # elif label=='person':
 
+                elif model_path==BASKET_CLEANING_MODEL_SOURCES[1]:#D5,detect
+                    boxes = r.boxes.xyxy  
+                    confidences = r.boxes.conf 
+                    classes = r.boxes.cls  
+                    basket_warning_zone_exist_flag=False
+                    #basket_warning_zone_flag=False
+                    #basket_safety_lock_flag=False#当检测不到则为False
+                    for i in range(len(boxes)):
+                        x1, y1, x2, y2 = boxes[i].tolist()
+                        confidence = confidences[i].item()
+                        cls = int(classes[i].item())
+                        label = model.names[cls]
 
-                elif model_path==BASKET_CLEANING_MODEL_SOURCES[1]:#D6,pose
+                        # if label=='brush':
+
+                        #     #is_inside = any(point_in_region([(x1+x2)/2,(y1+y2)/2],BASKET_CLEANING_OPERATION_REGION))
+                        #     is_inside = point_in_region([(x1+x2)/2,(y1+y2)/2],BASKET_CLEANING_OPERATION_REGION)
+                        #     if is_inside:
+                        #         basket_cleaning_operation_flag=True
+                        #         print("清洗作业")
+                            #print("刷子")
+
+                        if label=='warning_zone':
+                            basket_warning_zone_exist_flag=True
+                            # centerx=(x1+x2)/2
+                            # centery=(y1+y2)/2
+                            # point_in_region_flag=point_in_region([centerx,centery],BASKET_WARNING_ZONE_REGION)#警戒区划分区域
+                            # if point_in_region_flag:
+                            #     basket_warning_zone_flag=True
+                        # if label=='safety_belt' and basket_warning_zone_flag:#
+                        #     basket_safety_belt_flag=True
+
+                elif model_path==BASKET_CLEANING_MODEL_SOURCES[2]:#D6,pose
                     boxes=r.boxes.xyxy#人体的检测框
                     keypoints = r.keypoints.xy  
                     confidences = r.keypoints.conf  
@@ -237,11 +233,12 @@ def process_video(model_path, video_source,start_event):
                     if not basket_person_flag and point_in_region([709,1017],BASKET_PLATFORM_REGION):
                         basket_empty_load_flag=True 
                     
-                elif model_path==BASKET_CLEANING_MODEL_SOURCES[2]:#d6目标检测
+                elif model_path==BASKET_CLEANING_MODEL_SOURCES[3]:#d6目标检测
                     boxes = r.boxes.xyxy  
                     confidences = r.boxes.conf 
                     classes = r.boxes.cls  
                     basket_warning_zone_flag=False
+                    basket_warning_zone_exist_flag=False
                     #basket_safety_lock_flag=False#当检测不到则为False
                     for i in range(len(boxes)):
                         x1, y1, x2, y2 = boxes[i].tolist()
@@ -259,15 +256,16 @@ def process_video(model_path, video_source,start_event):
                             #print("刷子")
 
                         elif label=='warning_zone':
+                            basket_warning_zone_exist_flag=True
                             centerx=(x1+x2)/2
                             centery=(y1+y2)/2
                             point_in_region_flag=point_in_region([centerx,centery],BASKET_WARNING_ZONE_REGION)#警戒区划分区域
-                            if point_in_region_flag and not basket_warning_zone_flag:
+                            if point_in_region_flag:
                                 basket_warning_zone_flag=True
                         if label=='safety_belt' and basket_warning_zone_flag:#
                             basket_safety_belt_flag=True
 
-                elif model_path==BASKET_CLEANING_MODEL_SOURCES[3]:#d6分割
+                elif model_path==BASKET_CLEANING_MODEL_SOURCES[4]:#d6分割
                     boxes = r.boxes.xyxy
                     masks = r.masks.xy
                     classes = r.boxes.cls 
@@ -303,7 +301,7 @@ def process_video(model_path, video_source,start_event):
             if model_path==BASKET_CLEANING_MODEL_SOURCES[0] and not redis_client.exists("basket_step_2") and basket_suspension_flag:#D4悬挂机构 
                 save_image_and_redis(redis_client, results, "basket_step_2", SAVE_IMG_PATH, POST_IMG_PATH5)
 
-            elif model_path==BASKET_CLEANING_MODEL_SOURCES[2]:
+            elif model_path==BASKET_CLEANING_MODEL_SOURCES[3]:
                 if basket_warning_zone_flag and not redis_client.exists("basket_step_1"):#警戒区
                     save_image_and_redis(redis_client, results, "basket_step_1", SAVE_IMG_PATH, POST_IMG_PATH5)
                     print("警戒区")
@@ -311,7 +309,7 @@ def process_video(model_path, video_source,start_event):
                 elif redis_client.exists("basket_step_12") and not redis_client.exists("basket_step_11"):
                     save_image_and_redis(redis_client, results, "basket_step_11", SAVE_IMG_PATH, POST_IMG_PATH5)
                     print("清理现场")
-                elif not basket_warning_zone_flag and redis_client.exists("basket_step_1") and redis_client.exists("basket_step_10") and not redis_client.exists("basket_step_12"):
+                elif not basket_warning_zone_exist_flag and redis_client.exists("basket_step_1") and not redis_client.exists("basket_step_12"):
                     save_image_and_redis(redis_client, results, "basket_step_12", SAVE_IMG_PATH, POST_IMG_PATH5)
                     print("警戒区消失")
                 elif basket_safety_belt_flag and not redis_client.exists("basket_step_9"):
@@ -321,7 +319,7 @@ def process_video(model_path, video_source,start_event):
                     save_image_and_redis(redis_client, results, "basket_step_10", SAVE_IMG_PATH, POST_IMG_PATH5)
                     print("清洗作业")
                 
-            elif model_path==BASKET_CLEANING_MODEL_SOURCES[1]:#D6,pose
+            elif model_path==BASKET_CLEANING_MODEL_SOURCES[2]:#D6,pose
 
                 if basket_steel_wire_flag and not redis_client.exists("basket_step_3"):
                     save_image_and_redis(redis_client, results, "basket_step_3", SAVE_IMG_PATH, POST_IMG_PATH5)
