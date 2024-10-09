@@ -48,7 +48,7 @@ def process_video(model_path, video_source, start_event):
             if cap.get(cv2.CAP_PROP_POS_FRAMES) % 10 != 0:#跳帧检测，
                 continue
 
-            x, y, w, h = 650, 0, 980, 1440#剪裁画面的中心区域
+            x, y, w, h = 920, 0, 587, 1436#剪裁画面的中心区域
 
             # Crop the frame to the ROI
             frame = frame[y:y+h, x:x+w]

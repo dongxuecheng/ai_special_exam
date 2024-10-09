@@ -1,49 +1,24 @@
 import cv2
 import torch
 from shapely.geometry import box, Polygon
-import threading
 import numpy as np
 from datetime import datetime
 from ultralytics import YOLO
 
 from utils.tool import IoU
-from globals import stop_event,redis_client
 from config import SAVE_IMG_PATH,POST_IMG_PATH6,EQUIPMENT_CLEANING_VIDEO_SOURCES,EQUIPMENT_CLEANING_MODEL_SOURCES
-from config import EQUIPMENT_SAFETY_ROPE_REGION,EQUIPMENT_WORK_ROPE_REGION,EQUIPMENT_ANCHOR_DEVICE_REGION,EQUIPMENT_CLEANING_OPERATION_REGION,EQUIPMENT_WARNING_ZONE_REGION
-from globals import equipment_cleaning_flag,person_position,equipment_warning_zone_flag
+from config import EQUIPMENT_SAFETY_ROPE_REGION,EQUIPMENT_WORK_ROPE_REGION,EQUIPMENT_ANCHOR_DEVICE_REGION,EQUIPMENT_CLEANING_OPERATION_REGION,EQUIPMENT_WARNING_ZONE_REGION,EQUIPMENT_SELF_LOCKING_DEVICE_REGION
 
-def init_equipment_cleaning_detection():
-    global equipment_cleaning_flag
-    equipment_cleaning_flag=[False]*12
-    
-    for i in range(1, 13):
-        redis_client.delete(f"equipment_step_{i}")
-    redis_client.delete("equipment_cleaning_order")
-
-    pass
-
-def start_equipment_cleaning_detection(start_events):
-    threads = []
-    for model_path, video_source in zip(EQUIPMENT_CLEANING_MODEL_SOURCES,EQUIPMENT_CLEANING_VIDEO_SOURCES):
-        event = threading.Event()
-        start_events.append(event)
-        thread = threading.Thread(target=process_video, args=(model_path, video_source,event))
-        threads.append(thread)
-        thread.daemon=True
-        thread.start()
-        print("单人吊具清洗子线程运行中")
-
-    # Wait for any threads to complete
-    for thread in threads:
-        thread.join()
-        print("单人吊具清洗子线程运行结束")
 
 
 def point_in_region(point, region):#判断点是否在多边形内
     is_inside = cv2.pointPolygonTest(region.reshape((-1, 1, 2)), point, False)
     return is_inside >= 0
 
-def save_image_and_redis(redis_client, results, step_name, save_path, post_path):
+
+
+
+def save_image_and_redis(equipment_cleaning_imgs, equipment_cleaning_order,results, step_name, save_path, post_path):
 
     save_time = datetime.now().strftime('%Y%m%d_%H%M')
     imgpath = f"{save_path}/{step_name}_{save_time}.jpg"
@@ -65,19 +40,19 @@ def save_image_and_redis(redis_client, results, step_name, save_path, post_path)
     #     annotated_frame = cv2.polylines(annotated_frame, [region.reshape(-1, 1, 2) for region in BASKET_SAFETY_LOCK_REGION], isClosed=True, color=(0, 255, 0), thickness=4)
     
     cv2.imwrite(imgpath, annotated_frame)
-    redis_client.set(step_name, postpath)
-    redis_client.rpush("equipment_cleaning_order", step_name)
+    equipment_cleaning_imgs[step_name]=postpath
+
+    equipment_cleaning_order.append(step_name)
 
 
 
 
-def process_video(model_path, video_source,start_event):
+def process_video(model_path, video_source,start_event,stop_event,equipment_cleaning_flag,equipment_cleaning_imgs,equipment_cleaning_order,person_position,equipment_warning_zone_flag):
     model = YOLO(model_path)
     cap = cv2.VideoCapture(video_source)
-    
-    #cap.set(cv2.CAP_PROP_BUFFERSIZE, 100)  # 设置缓冲区大小为 10 帧    
     while cap.isOpened():
         if stop_event.is_set():#控制停止推理
+            print("停止推理")
             break
 
         success, frame = cap.read()
@@ -86,8 +61,9 @@ def process_video(model_path, video_source,start_event):
             if cap.get(cv2.CAP_PROP_POS_FRAMES) % 25 != 0:
                 continue
 
-            results = model.predict(frame,conf=0.3,verbose=False)
-            global equipment_cleaning_flag,person_position,equipment_warning_zone_flag
+            #results = model.predict(frame,conf=0.3,verbose=False)
+            results = model.track(frame,conf=0.3,verbose=False,persist=True,tracker="bytetrack.yaml")
+            #global equipment_warning_zone_flag
             
             #person_position=[0,0,0,0]
             for r in results:
@@ -97,7 +73,7 @@ def process_video(model_path, video_source,start_event):
                     confidences = r.boxes.conf 
                     classes = r.boxes.cls  
 
-                    equipment_warning_zone_flag=False
+                    equipment_warning_zone_flag[0]=False
                     # basket_warning_zone_flag=False#当检测不到则为False
                     # basket_cleaning_up_flag=False
                     #equipment_cleaning_flag[0]=False
@@ -110,11 +86,11 @@ def process_video(model_path, video_source,start_event):
                             
                             centerx=(x1+x2)/2
                             centery=(y1+y2)/2
-                            equipment_warning_zone_flag=True
+                            equipment_warning_zone_flag[0]=True
                             point_in_region_flag=point_in_region([centerx,centery],EQUIPMENT_WARNING_ZONE_REGION)#警戒区划分区域
                             if point_in_region_flag:
                                 equipment_cleaning_flag[0]=True
-                                equipment_warning_zone_flag=True
+                                equipment_warning_zone_flag[0]=True
                                 equipment_cleaning_flag[11]=False
                                 #print("警戒区")
 
@@ -122,6 +98,10 @@ def process_video(model_path, video_source,start_event):
                                 #print("挂点装置区域有人")
 
                         elif label=='seating_plate':
+                            # print(str(person_position))
+                            # for i in person_position:
+                            #     print(i)
+
                             if(IoU(person_position,[x1,y1,x2,y2])>0.3):            
                                 equipment_cleaning_flag[2]=True
                                 equipment_cleaning_flag[7]=True
@@ -133,19 +113,8 @@ def process_video(model_path, video_source,start_event):
                             equipment_cleaning_flag[6]=True
                             #print("u型锁")
 
-                        elif label=='self_locking':
-                            equipment_cleaning_flag[5]=True
-                            #print("自锁器")
 
-                        elif label=='safety_belt':
-                            equipment_cleaning_flag[8]=True
-                            
-                            #print("检查安全带挂设")
-                        # elif label=='brush' and confidence>0.6:
-                        #     #equipment_cleaning_flag[10]=True
-                        #     brush_flag=True
-
-                    if not equipment_warning_zone_flag and equipment_cleaning_flag[0]:#当检测不到警戒区时,判定未拆除警戒区域
+                    if not equipment_warning_zone_flag[0] and not equipment_warning_zone_flag[1] and equipment_cleaning_flag[0]:#当检测不到警戒区时,判定未拆除警戒区域
                         equipment_cleaning_flag[11]=True
                         print("拆除警戒区域-----------")
 
@@ -161,8 +130,12 @@ def process_video(model_path, video_source,start_event):
                         label = model.names[cls]
 
                         if label=='person':
-                            person_position=[x1,y1,x2,y2]
-                            #print("检测到人")
+                            #person_position=[x1,y1,x2,y2]
+                            person_position[0]=x1
+                            person_position[1]=y1
+                            person_position[2]=x2
+                            person_position[3]=y2
+                            #print("检测到人"+str(person_position))
                             
                             centerx=(x1+x2)/2
                             centery=(y1+y2)/2
@@ -192,17 +165,23 @@ def process_video(model_path, video_source,start_event):
                                 equipment_cleaning_flag[4]=True#安全绳
                                 equipment_cleaning_flag[5]=True
                                 #print("安全绳")
+                        if not equipment_cleaning_flag[5]:#TODO 暂时不用
+                            is_inside = any(point_in_region(point, EQUIPMENT_SELF_LOCKING_DEVICE_REGION) for point in points)
+                            if is_inside:
+                                equipment_cleaning_flag[5]=True
 
                     
-                elif model_path==EQUIPMENT_CLEANING_MODEL_SOURCES[3]:#d8 目标检测
+                elif model_path==EQUIPMENT_CLEANING_MODEL_SOURCES[3]:#d8 目标检测  
                     boxes = r.boxes.xyxy  
                     confidences = r.boxes.conf 
                     classes = r.boxes.cls  
                     
                     brush_flag=False
+                    equipment_warning_zone_flag[1]=False
+
                     #global equipment_warning_zone_flag
                     #basket_safety_lock_flag=False#当检测不到则为False
-                    #equipment_warning_zone_flag=False
+                    #equipment_warning_zone_flag.value=False
                     for i in range(len(boxes)):
                         x1, y1, x2, y2 = boxes[i].tolist()
                         confidence = confidences[i].item()
@@ -210,66 +189,99 @@ def process_video(model_path, video_source,start_event):
                         label = model.names[cls]
                         # if label=='safety_belt':
                         #     equipment_cleaning_flag[8]=True
-                        if label=='brush' and confidence>0.5:
+                        if label=='brush':
                             brush_flag=True
-                            print("检测到刷子")
+                            #print("检测到刷子")
                             is_inside = point_in_region([(x1+x2)/2,(y1+y2)/2],EQUIPMENT_CLEANING_OPERATION_REGION)#刷子是否在指定区域
                             if is_inside:
                                 equipment_cleaning_flag[9]=True
 
                         if label=='warning_zone' and confidence>0.7:
-                            equipment_warning_zone_flag=True
+                            equipment_warning_zone_flag[1]=True
 
 
                     if equipment_cleaning_flag[11] and not brush_flag:
                         equipment_cleaning_flag[10]=True
+                
+                elif model_path==EQUIPMENT_CLEANING_MODEL_SOURCES[4]:
+                    boxes = r.boxes.xyxy  
+                    confidences = r.boxes.conf 
+                    classes = r.boxes.cls  
+
+                    safety_belt_position=[0,0,0,0]
+                    self_locking_position=[0,0,0,0]
+
+
+                    for i in range(len(boxes)):
+                        x1, y1, x2, y2 = boxes[i].tolist()
+                        confidence = confidences[i].item()
+                        cls = int(classes[i].item())
+                        label = model.names[cls]
+                        if label=='safety_belt':
+                            safety_belt_position=[x1,y1,x2,y2]
+                            #equipment_cleaning_flag[8]=True
+                            #print("安全带")
+                        elif label=='self_lock':
+                            self_locking_position=[x1,y1,x2,y2]
+                            # global EQUIPMENT_SELF_LOCKING_DEVICE_REGION
+                            # EQUIPMENT_SELF_LOCKING_DEVICE_REGION[0]=[[x1,y1],[x2,y1],[x2,y2],[x1,y2]]
+                            #equipment_cleaning_flag[5]=True
+                            #print("自锁器")
+                    
+                    if IoU(safety_belt_position,self_locking_position)>0:
+                        #equipment_cleaning_flag[5]=True
+                        equipment_cleaning_flag[8]=True
+                        print("安全带挂设完毕")
             
             if model_path==EQUIPMENT_CLEANING_MODEL_SOURCES[0]:
-                if equipment_cleaning_flag[0] and not redis_client.exists("equipment_step_1"):
-                    save_image_and_redis(redis_client, results, "equipment_step_1", SAVE_IMG_PATH, POST_IMG_PATH6)
+                if equipment_cleaning_flag[0] and 'equipment_step_1' not in equipment_cleaning_imgs:
+                    save_image_and_redis(equipment_cleaning_imgs, equipment_cleaning_order, results, "equipment_step_1", SAVE_IMG_PATH, POST_IMG_PATH6)
                     print("安全警戒")
 
-                if equipment_cleaning_flag[2] and not redis_client.exists("equipment_step_3"):
-                    save_image_and_redis(redis_client, results, "equipment_step_3", SAVE_IMG_PATH, POST_IMG_PATH6)
-                    print("座板")
-                if equipment_cleaning_flag[5] and not redis_client.exists("equipment_step_6"):
-                    save_image_and_redis(redis_client, results, "equipment_step_6", SAVE_IMG_PATH, POST_IMG_PATH6)
+                if equipment_cleaning_flag[2] and 'equipment_step_3' not in equipment_cleaning_imgs:
+                    save_image_and_redis(equipment_cleaning_imgs, equipment_cleaning_order, results, "equipment_step_3", SAVE_IMG_PATH, POST_IMG_PATH6)
+                    print("座板图片保存")
+                if equipment_cleaning_flag[5] and 'equipment_step_6' not in equipment_cleaning_imgs:
+                    save_image_and_redis(equipment_cleaning_imgs, equipment_cleaning_order,results,  "equipment_step_6", SAVE_IMG_PATH, POST_IMG_PATH6)
                     print("自锁器")
-                if equipment_cleaning_flag[6] and not redis_client.exists("equipment_step_7"):
-                    save_image_and_redis(redis_client, results, "equipment_step_7", SAVE_IMG_PATH, POST_IMG_PATH6)
+                if equipment_cleaning_flag[6] and 'equipment_step_7' not in equipment_cleaning_imgs:
+                    save_image_and_redis(equipment_cleaning_imgs, equipment_cleaning_order, results, "equipment_step_7", SAVE_IMG_PATH, POST_IMG_PATH6)
                     print("u型锁")
-                if equipment_cleaning_flag[7] and not redis_client.exists("equipment_step_8"):
-                    save_image_and_redis(redis_client, results, "equipment_step_8", SAVE_IMG_PATH, POST_IMG_PATH6)
-                    print("座板和人有交集")
-                if equipment_cleaning_flag[8] and not redis_client.exists("equipment_step_9"):
-                    save_image_and_redis(redis_client, results, "equipment_step_9", SAVE_IMG_PATH, POST_IMG_PATH6)
-                    print("安全带挂设")
-                if equipment_cleaning_flag[11] and not redis_client.exists("equipment_step_12"):
-                    save_image_and_redis(redis_client, results, "equipment_step_12", SAVE_IMG_PATH, POST_IMG_PATH6)
+                if equipment_cleaning_flag[7] and 'equipment_step_8' not in equipment_cleaning_imgs:
+                    save_image_and_redis(equipment_cleaning_imgs, equipment_cleaning_order,results,  "equipment_step_8", SAVE_IMG_PATH, POST_IMG_PATH6)
+                    print("座板和人有交集图片保存")
+
+                if equipment_cleaning_flag[11] and 'equipment_step_12' not in equipment_cleaning_imgs:
+                    save_image_and_redis(equipment_cleaning_imgs, equipment_cleaning_order, results, "equipment_step_12", SAVE_IMG_PATH, POST_IMG_PATH6)
                     print("拆除警戒区域")
-                if equipment_cleaning_flag[10] and equipment_cleaning_flag[11] and equipment_cleaning_flag[9]  and not redis_client.exists("equipment_step_11"):
-                    save_image_and_redis(redis_client, results, "equipment_step_11", SAVE_IMG_PATH, POST_IMG_PATH6)
+                if equipment_cleaning_flag[10] and equipment_cleaning_flag[11] and equipment_cleaning_flag[9] and 'equipment_step_11' not in equipment_cleaning_imgs:
+                    save_image_and_redis(equipment_cleaning_imgs, equipment_cleaning_order,results, "equipment_step_11", SAVE_IMG_PATH, POST_IMG_PATH6)
                     print("清洗现场")
                 
             elif model_path==EQUIPMENT_CLEANING_MODEL_SOURCES[1]:
-                if equipment_cleaning_flag[1] and not redis_client.exists("equipment_step_2"):
-                    save_image_and_redis(redis_client, results, "equipment_step_2", SAVE_IMG_PATH, POST_IMG_PATH6)
+                if equipment_cleaning_flag[1] and 'equipment_step_2' not in equipment_cleaning_imgs:
+                    save_image_and_redis(equipment_cleaning_imgs, equipment_cleaning_order,results, "equipment_step_2", SAVE_IMG_PATH, POST_IMG_PATH6)
                     print("挂点装置")
 
             elif model_path==EQUIPMENT_CLEANING_MODEL_SOURCES[2]:
-                if equipment_cleaning_flag[3] and not redis_client.exists("equipment_step_4"):
-                    save_image_and_redis(redis_client, results, "equipment_step_4", SAVE_IMG_PATH, POST_IMG_PATH6)
+                if equipment_cleaning_flag[3] and 'equipment_step_4' not in equipment_cleaning_imgs:
+                    save_image_and_redis(equipment_cleaning_imgs, equipment_cleaning_order,results,  "equipment_step_4", SAVE_IMG_PATH, POST_IMG_PATH6)
                     print("工作绳")
-                if equipment_cleaning_flag[4] and not redis_client.exists("equipment_step_5"):
-                    save_image_and_redis(redis_client, results, "equipment_step_5", SAVE_IMG_PATH, POST_IMG_PATH6)
+                if equipment_cleaning_flag[4] and 'equipment_step_5' not in equipment_cleaning_imgs:
+                    save_image_and_redis(equipment_cleaning_imgs, equipment_cleaning_order, results, "equipment_step_5", SAVE_IMG_PATH, POST_IMG_PATH6)
                     print("安全绳")
                 
             elif model_path==EQUIPMENT_CLEANING_MODEL_SOURCES[3]:#d6目标检测
-                if equipment_cleaning_flag[9] and not redis_client.exists("equipment_step_10"):
-                    save_image_and_redis(redis_client, results, "equipment_step_10", SAVE_IMG_PATH, POST_IMG_PATH6)
+                if equipment_cleaning_flag[9] and 'equipment_step_10' not in equipment_cleaning_imgs:
+                    save_image_and_redis(equipment_cleaning_imgs, equipment_cleaning_order,results,  "equipment_step_10", SAVE_IMG_PATH, POST_IMG_PATH6)
                     print("清洗操作区域")
 
-            start_event.set()          
+            elif model_path==EQUIPMENT_CLEANING_MODEL_SOURCES[4]:#d8目标检测
+                if equipment_cleaning_flag[8] and 'equipment_step_9' not in equipment_cleaning_imgs:
+                    save_image_and_redis(equipment_cleaning_imgs, equipment_cleaning_order,results,  "equipment_step_9", SAVE_IMG_PATH, POST_IMG_PATH6)
+                    print("安全带挂设")
+            start_event.set()#标志进程已启动  
+           
         else:
             # Break the loop if the end of the video is reached
             break

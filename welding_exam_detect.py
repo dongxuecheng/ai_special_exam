@@ -93,7 +93,7 @@ def process_video(model_path, video_source,start_event):
                                 welding_detect_num+=1
                             else:
                                 welding=True#表示有焊接
-                        if label=='sweep':
+                        if label=='sweep' and welding==True:
                             if sweep_detect_num<3:
                                 sweep_detect_num+=1
                             else:
