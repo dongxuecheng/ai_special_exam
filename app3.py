@@ -4,7 +4,7 @@ from flask import Flask, jsonify,send_from_directory
 from platform_wearing_detect import start_wearing_detection,init_wearing_detection
 from globals import inference_thread, stop_event,lock,redis_client
 
-
+#吊篮吊具的穿戴检测
 app = Flask(__name__)
 #app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB
 

@@ -116,6 +116,7 @@ BASKET_CLEANING_CH5_DETECT_MODEL='/mnt/xcd/code/ai_special_exam/weights/ch6detec
 BASKET_CLEANING_CH6_POSE_MODEL='/mnt/xcd/code/ai_special_exam/weights/yolov8s-pose2.pt'
 BASKET_CLEANING_CH6_DETECT_MODEL='/mnt/xcd/code/ai_special_exam/weights/ch6detect_basker_9_14_a.pt'
 BASKET_CLEANING_CH6_SEG_MODEL='/mnt/xcd/code/ai_special_exam/weights/basket_seg_9_13.pt'
+BASKET_CLEANING_CH6_SAFETY_BELT_MODEL='/mnt/xcd/code/yolov8/runs/detect/train51/weights/last.pt'
 
 BASKET_CLEANING_CH4_RTSP='rtsp://admin:yaoan1234@172.16.22.237/cam/realmonitor?channel=1&subtype=0'
 BASKET_CLEANING_CH5_RTSP='rtsp://admin:yaoan1234@172.16.22.239/cam/realmonitor?channel=1&subtype=0'
@@ -125,13 +126,15 @@ BASKET_CLEANING_VIDEO_SOURCES=[BASKET_CLEANING_CH4_RTSP,
                                BASKET_CLEANING_CH5_RTSP,
                                BASKET_CLEANING_CH6_RTSP,
                                BASKET_CLEANING_CH6_RTSP,
+                               BASKET_CLEANING_CH6_RTSP,
                                BASKET_CLEANING_CH6_RTSP]
 
 BASKET_CLEANING_MODEL_SOURCES=[BASKET_CLEANING_CH4_POSE_MODEL,
                                BASKET_CLEANING_CH5_DETECT_MODEL,
                                BASKET_CLEANING_CH6_POSE_MODEL,
                                BASKET_CLEANING_CH6_DETECT_MODEL,
-                               BASKET_CLEANING_CH6_SEG_MODEL]
+                               BASKET_CLEANING_CH6_SEG_MODEL,
+                               BASKET_CLEANING_CH6_SAFETY_BELT_MODEL]
 
 #
 
@@ -154,12 +157,13 @@ BASKET_LIFTING_REGION_L = np.array([]
 ,np.int32)
 BASKET_LIFTING_REGION_R = np.array([]
 ,np.int32)
+BASKET_ELECTRICAL_SYSTEM_REGION = np.array([], np.int32)
 
 BASKET_SAFETY_LOCK_REGION = np.array([
     [[1635, 813], [1742, 927], [1955, 910], [1906, 747]],
     [[650, 944], [800, 1000], [800, 923], [680, 872]]
     ], np.int32)
-BASKET_ELECTRICAL_SYSTEM_REGION = np.array([], np.int32)
+
 BASKET_CLEANING_OPERATION_REGION = np.array([[6, 954], [4, 1437], [1054, 1436], [1051, 954]], np.int32)
 BASKET_EMPTY_LOAD_REGION = np.array([(752, 855), (712, 969), (836, 1020), (896, 918)], np.int32)
 BASKET_WARNING_ZONE_REGION=np.array([(1250, 0), (1256, 469), (2048, 492), (2048, 0)], np.int32)
@@ -170,15 +174,19 @@ EQUIPMENT_CLEANING_CH8_RTSP='rtsp://admin:yaoan1234@172.16.22.44/cam/realmonitor
 #EQUIPMENT_CLEANING_CH10_RTSP='rtsp://admin:yaoan1234@172.16.22.44/cam/realmonitor?channel=1&subtype=0'
 
 
-EQUIPMENT_CLEANING_CH3_DETECT_MODEL1='/mnt/xcd/code/ai_special_exam/weights/ch6detect_basker_9_14_a.pt'
+EQUIPMENT_CLEANING_CH3_DETECT_MODEL1='/mnt/xcd/code/yolov8/runs/detect/train50/weights/last.pt'
 EQUIPMENT_CLEANING_CH3_DETECT_MODEL2='/mnt/xcd/code/ai_special_exam/weights/yolov8s.pt'
 #EQUIPMENT_CLEANING_CH10_DETECT_MODEL1='/mnt/xcd/code/ai_special_exam/weights/ch6detect_basket_9_6_1.pt'
 EQUIPMENT_CLEANING_CH8_POSE_MODEL='/mnt/xcd/code/ai_special_exam/weights/yolov8s-pose2.pt'
-EQUIPMENT_CLEANING_CH8_DETECT_MODEL='/mnt/xcd/code/ai_special_exam/weights/ch6detect_basker_9_14_a_1.pt'
+EQUIPMENT_CLEANING_CH8_DETECT_MODEL='/mnt/xcd/code/yolov8/runs/detect/train50/weights/last1.pt'
+
+#检测安全带/自锁器
+EQUIPMENT_CLEANING_CH8_SAFETY_BELT_DETECT_MODEL='/mnt/xcd/code/yolov8/runs/detect/train51/weights/last.pt'
 
 EQUIPMENT_CLEANING_VIDEO_SOURCES=[EQUIPMENT_CLEANING_CH3_RTSP,
                                   EQUIPMENT_CLEANING_CH3_RTSP,
                                   #EQUIPMENT_CLEANING_CH10_RTSP,
+                                  EQUIPMENT_CLEANING_CH8_RTSP,
                                   EQUIPMENT_CLEANING_CH8_RTSP,
                                   EQUIPMENT_CLEANING_CH8_RTSP
 ]
@@ -187,7 +195,8 @@ EQUIPMENT_CLEANING_MODEL_SOURCES=[EQUIPMENT_CLEANING_CH3_DETECT_MODEL1,
                                   EQUIPMENT_CLEANING_CH3_DETECT_MODEL2,
                                   #EQUIPMENT_CLEANING_CH10_DETECT_MODEL1,
                                   EQUIPMENT_CLEANING_CH8_POSE_MODEL,
-                                  EQUIPMENT_CLEANING_CH8_DETECT_MODEL
+                                  EQUIPMENT_CLEANING_CH8_DETECT_MODEL,
+                                  EQUIPMENT_CLEANING_CH8_SAFETY_BELT_DETECT_MODEL
 ]
 
 EQUIPMENT_WARNING_ZONE_REGION = np.array([
@@ -195,12 +204,18 @@ EQUIPMENT_WARNING_ZONE_REGION = np.array([
 ], np.int32)
 
 EQUIPMENT_ANCHOR_DEVICE_REGION = np.array([
-    [[1095, 10], [1099, 534], [1564, 523], [1564, 9]],
+    [[855, 0], [855, 536], [1288, 536], [1288, 0]],
 ], np.int32)
 EQUIPMENT_WORK_ROPE_REGION = np.array([
-    [[1300, 1215], [1937, 1282], [2134, 1071], [1700, 1100]],
+    [[368, 1193], [1546, 1400], [1803, 1178], [1378, 1126]],
 ], np.int32)
 EQUIPMENT_SAFETY_ROPE_REGION = np.array([
-    [[1300, 1215], [1937, 1282], [2134, 1071], [1700, 1100]],
+    [[368, 1193], [1546, 1400], [1803, 1178], [1378, 1126]],
 ], np.int32)
-EQUIPMENT_CLEANING_OPERATION_REGION=np.array([[1056, 758], [1061, 1427], [2554, 1414], [2536, 763]], np.int32)
+EQUIPMENT_SELF_LOCKING_DEVICE_REGION = np.array([
+    [],
+], np.int32)
+
+EQUIPMENT_CLEANING_OPERATION_REGION=np.array([
+    [[405, 693], [405, 1422], [1827, 1422], [1827, 685]],
+    ], np.int32)

@@ -103,6 +103,8 @@ def process_video(model_path, video_source, start_event):
                     #     #welding_components_flag=False
                     # #if video_source == WELDING_CH3_RTSP:
                         
+                    # if video_source==WELDING_CH3_RTSP:#当画面没有油桶时，给个初值为安全
+                    #     oil_barrel_flag=True
 
                     for i in range(len(boxes)):
                         x1, y1, x2, y2 = boxes[i].tolist()
