@@ -14,45 +14,54 @@ from globals import steps
 from globals import oil_barrel,main_switch,grounding_wire,welding_machine_switch,welding_components,mask,welding,gloves,sweep,sweep_detect_num,welding_detect_num
 
 
-def init_welding_detection():
-    global steps
-    global oil_barrel,main_switch,grounding_wire,welding_machine_switch,welding_components,mask,welding,gloves,sweep
-    global sweep_detect_num,welding_detect_num
-    oil_barrel=None
-    main_switch=None
-    grounding_wire=None
-    welding_machine_switch=None
-    welding_components=None
-    mask=None
-    welding=None
-    gloves=None
-    sweep=None
+# def init_welding_detection():
+#     global steps
+#     global oil_barrel,main_switch,grounding_wire,welding_machine_switch,welding_components,mask,welding,gloves,sweep
+#     global sweep_detect_num,welding_detect_num
+#     oil_barrel=None
+#     main_switch=None
+#     grounding_wire=None
+#     welding_machine_switch=None
+#     welding_components=None
+#     mask=None
+#     welding=None
+#     gloves=None
+#     sweep=None
 
-    sweep_detect_num=0
-    welding_detect_num=0
+#     sweep_detect_num=0
+#     welding_detect_num=0
     
-    steps = [False] * 13
-    redis_client.delete("welding_post_path")
+#     steps = [False] * 13
+#     redis_client.delete("welding_post_path")
 
-def start_welding_detection(start_events):
-    threads = []
-    for model_path, video_source in zip(WELDING_MODEL_PATHS, WELDING_VIDEO_SOURCES):
-        event = threading.Event()
-        start_events.append(event)
-        thread = threading.Thread(target=process_video, args=(model_path, video_source,event))
-        threads.append(thread)
-        thread.daemon=True
-        thread.start()
+# def start_welding_detection(start_events):
+#     threads = []
+#     for model_path, video_source in zip(WELDING_MODEL_PATHS, WELDING_VIDEO_SOURCES):
+#         event = threading.Event()
+#         start_events.append(event)
+#         thread = threading.Thread(target=process_video, args=(model_path, video_source,event))
+#         threads.append(thread)
+#         thread.daemon=True
+#         thread.start()
 
-    # Wait for all threads to complete
-    for thread in threads:
-        thread.join()
-        print("焊接子线程运行结束")
+#     # Wait for all threads to complete
+#     for thread in threads:
+#         thread.join()
+#         print("焊接子线程运行结束")
 
 
+def save_image(welding_exam_imgs,results, step_name,welding_exam_order):
+    save_time = datetime.now().strftime('%Y%m%d_%H%M')
+    imgpath = f"{SAVE_IMG_PATH}/{step_name}_{save_time}.jpg"
+    postpath = f"{POST_IMG_PATH2}/{step_name}_{save_time}.jpg"
+    annotated_frame = results[0].plot()
+    cv2.imwrite(imgpath, annotated_frame)
+    welding_exam_imgs[step_name]=postpath
+    welding_exam_order.append(step_name)
+    print(f"{step_name}完成")
 
 # Function to process video with YOLO model
-def process_video(model_path, video_source,start_event):
+def process_video(model_path, video_source,start_event,stop_event,welding_exam_flag, welding_exam_imgs,welding_exam_order):
     # Load YOLO model
     model = YOLO(model_path)
     
@@ -60,6 +69,7 @@ def process_video(model_path, video_source,start_event):
     
     while cap.isOpened():
         if stop_event.is_set():#控制停止推理
+            print("焊接考核子线程停止推理")
         #del model
             break
     # Read a frame from the video
@@ -75,7 +85,7 @@ def process_video(model_path, video_source,start_event):
             
             results = model.predict(frame,verbose=False,conf=0.4)
 
-            global steps
+            #global steps
             global oil_barrel,main_switch,grounding_wire,welding_machine_switch,welding_components,mask,welding,gloves,sweep
             global sweep_detect_num,welding_detect_num
 
@@ -92,12 +102,12 @@ def process_video(model_path, video_source,start_event):
                             if welding_detect_num<3:
                                 welding_detect_num+=1
                             else:
-                                welding=True#表示有焊接
-                        if label=='sweep' and welding==True:
+                                welding_exam_flag[6]=True#表示有焊接
+                        if label=='sweep' and welding_exam_flag[6]==True:
                             if sweep_detect_num<3:
                                 sweep_detect_num+=1
                             else:
-                                sweep=True#表示有打扫
+                                welding_exam_flag[11]=True#表示有打扫
                     else:
                         continue
 
@@ -164,210 +174,214 @@ def process_video(model_path, video_source,start_event):
 
                             grounding_wire="connect" if iou>0 else "disconnect" #表示搭铁线连接在焊台上    
 
-                        # if label=="welding_components" :
-                        #     welding_components_xyxy=boxes[i].tolist()#实时检测焊件的位置
-                        #     # 计算检测框的中心点
-                        #     x_center = (x1 + x2) / 2
-                        #     y_center = (y1 + y2) / 2
-                        #     center_point = (int(x_center), int(y_center))
-                        #     # 检查中心点是否在多边形内
-                        #     is_inside = cv2.pointPolygonTest(REGION4.reshape((-1, 1, 2)), center_point, False)
-                        #     welding_components=True if is_inside>=0 else False #表示在焊料在焊台上
 
                         
                         if label=="mask":
                             #mask=True #表示戴面罩
                             iou=IoU(boxes[i].tolist(),WELDING_REGION1)
-                            mask=True if iou>0 else False #表示戴面罩
+                            welding_exam_flag[5]=True if iou>0 else False #表示戴面罩
 
 
                         if label=="gloves":
                             #gloves_xyxy=boxes[i].tolist()#实时检测手套的位置
                             if confidence>0.5:
-                                gloves=True#表示戴手套
+                                welding_exam_flag[7]=True#表示戴手套
                             else:
-                                gloves=False
+                                welding_exam_flag[7]=False
 
-                        # if label=="welding" :
-                        #     iou1=IoU(gloves_xyxy,boxes[i].tolist())#自定义的矩形iou方法,焊枪跟手套进行iou计算
-                        #     iou2=IoU(welding_components_xyxy,boxes[i].tolist())#自定义的矩形iou方法,焊枪跟焊件进行iou计算
-                        #     if iou1>0 and iou2>0:
-                        #         gloves=True#表示有手套焊接
-                        #     if iou1<=0 and iou2>0:
-                        #         welding=True#表示无手套焊接
-                        
-                        # if label=="sweep" :
-                        #     # 计算检测框的中心点
-                        #     x_center = (x1 + x2) / 2
-                        #     y_center = (y1 + y2) / 2
-                        #     center_point = (int(x_center), int(y_center))
-                        #     # 检查中心点是否在多边形内
-                        #     is_inside = cv2.pointPolygonTest(REGION4.reshape((-1, 1, 2)), center_point, False)
-                        #     sweep=True if is_inside>=0 else False #表示是否打扫
+
                 
                 if video_source ==WELDING_CH3_RTSP:
-                    if oil_barrel=="safe" and steps[0]==False:#排除危险源
-                        steps[0]=True
-                        save_time=datetime.now().strftime('%Y%m%d_%H%M')
-                        #save_time=datetime.now().strftime('%Y%m%d_%H')
-                        img_path = f"{SAVE_IMG_PATH}/step1_{save_time}.jpg"
-                        post_path = f"{POST_IMG_PATH2}/step1_{save_time}.jpg"
-                        redis_client.rpush("welding_post_path",post_path)
-                        annotated_frame = results[0].plot()
-                        cv2.imwrite(img_path, annotated_frame)
-                        print("step1完成")
-                        #post("1",post_path)
+                    # if oil_barrel=="safe" and steps[0]==False:#排除危险源
+                    #     steps[0]=True
+                    #     save_time=datetime.now().strftime('%Y%m%d_%H%M')
+                    #     #save_time=datetime.now().strftime('%Y%m%d_%H')
+                    #     img_path = f"{SAVE_IMG_PATH}/step1_{save_time}.jpg"
+                    #     post_path = f"{POST_IMG_PATH2}/step1_{save_time}.jpg"
+                    #     redis_client.rpush("welding_post_path",post_path)
+                    #     annotated_frame = results[0].plot()
+                    #     cv2.imwrite(img_path, annotated_frame)
+                    #     print("step1完成")
+                    #     #post("1",post_path)
+                    if oil_barrel=="safe" and 'welding_exam_1' not in welding_exam_imgs:#排除危险源
+                        save_image(welding_exam_imgs,results,"welding_exam_1",welding_exam_order)
                     
                 if video_source==WELDING_CH4_RTSP:
-                    if main_switch=="open" and steps[1]==False:
-                        steps[1]=True
-                        save_time=datetime.now().strftime('%Y%m%d_%H%M')
-                        #save_time=datetime.now().strftime('%Y%m%d_%H')
-                        img_path = f"{SAVE_IMG_PATH}/step2_{save_time}.jpg"
-                        post_path = f"{POST_IMG_PATH2}/step2_{save_time}.jpg"
-                        redis_client.rpush("welding_post_path",post_path)
-                        annotated_frame = results[0].plot()
-                        cv2.imwrite(img_path, annotated_frame)
-                        print("step2完成")
-                        #post("2",post_path)
+                    # if main_switch=="open" and steps[1]==False:
+                    #     steps[1]=True
+                    #     save_time=datetime.now().strftime('%Y%m%d_%H%M')
+                    #     #save_time=datetime.now().strftime('%Y%m%d_%H')
+                    #     img_path = f"{SAVE_IMG_PATH}/step2_{save_time}.jpg"
+                    #     post_path = f"{POST_IMG_PATH2}/step2_{save_time}.jpg"
+                    #     redis_client.rpush("welding_post_path",post_path)
+                    #     annotated_frame = results[0].plot()
+                    #     cv2.imwrite(img_path, annotated_frame)
+                    #     print("step2完成")
+                    #     #post("2",post_path)
+                    if main_switch=="open" and 'welding_exam_2' not in welding_exam_imgs:
+                        save_image(welding_exam_imgs,results,"welding_exam_2",welding_exam_order)
 
-                    if main_switch=="close" and steps[12]==False and steps[1]:
-                        steps[12]=True
-                        save_time=datetime.now().strftime('%Y%m%d_%H%M')
-                        #save_time=datetime.now().strftime('%Y%m%d_%H')
-                        img_path = f"{SAVE_IMG_PATH}/step13_{save_time}.jpg"
-                        post_path = f"{POST_IMG_PATH2}/step13_{save_time}.jpg"
-                        redis_client.rpush("welding_post_path",post_path)
-                        annotated_frame = results[0].plot()
-                        cv2.imwrite(img_path, annotated_frame)
-                        print("step13完成")
-                        #post("13",post_path)
+                    # if main_switch=="close" and steps[12]==False and steps[1]:
+                    #     steps[12]=True
+                    #     save_time=datetime.now().strftime('%Y%m%d_%H%M')
+                    #     #save_time=datetime.now().strftime('%Y%m%d_%H')
+                    #     img_path = f"{SAVE_IMG_PATH}/step13_{save_time}.jpg"
+                    #     post_path = f"{POST_IMG_PATH2}/step13_{save_time}.jpg"
+                    #     redis_client.rpush("welding_post_path",post_path)
+                    #     annotated_frame = results[0].plot()
+                    #     cv2.imwrite(img_path, annotated_frame)
+                    #     print("step13完成")
+                    #     #post("13",post_path)
+                    if main_switch=="close" and 'welding_exam_13' not in welding_exam_imgs and 'welding_exam_2' in welding_exam_imgs:
+                        save_image(welding_exam_imgs,results,"welding_exam_13",welding_exam_order)
                     
                 if video_source==WELDING_CH1_RTSP:
-                    if welding_machine_switch=="open" and steps[4]==False:
-                        steps[4]=True
-                        save_time=datetime.now().strftime('%Y%m%d_%H%M')
-                        #save_time=datetime.now().strftime('%Y%m%d_%H')
-                        img_path = f"{SAVE_IMG_PATH}/step5_{save_time}.jpg"
-                        post_path = f"{POST_IMG_PATH2}/step5_{save_time}.jpg"
-                        redis_client.rpush("welding_post_path",post_path)
-                        annotated_frame = results[0].plot()
-                        cv2.imwrite(img_path, annotated_frame)
-                        print("step5完成")
-                        #post("5",post_path)
+                    # if welding_machine_switch=="open" and steps[4]==False:
+                    #     steps[4]=True
+                    #     save_time=datetime.now().strftime('%Y%m%d_%H%M')
+                    #     #save_time=datetime.now().strftime('%Y%m%d_%H')
+                    #     img_path = f"{SAVE_IMG_PATH}/step5_{save_time}.jpg"
+                    #     post_path = f"{POST_IMG_PATH2}/step5_{save_time}.jpg"
+                    #     redis_client.rpush("welding_post_path",post_path)
+                    #     annotated_frame = results[0].plot()
+                    #     cv2.imwrite(img_path, annotated_frame)
+                    #     print("step5完成")
+                    #     #post("5",post_path)
+                    if welding_machine_switch=="open" and 'welding_exam_5' not in welding_exam_imgs:
+                        save_image(welding_exam_imgs,results,"welding_exam_5",welding_exam_order)
                     
-                    if welding_machine_switch=="close" and steps[8]==False and steps[4]:
-                        steps[8]=True
-                        save_time=datetime.now().strftime('%Y%m%d_%H%M')
-                        #save_time=datetime.now().strftime('%Y%m%d_%H')
-                        img_path = f"{SAVE_IMG_PATH}/step9_{save_time}.jpg"
-                        post_path = f"{POST_IMG_PATH2}/step9_{save_time}.jpg"
-                        redis_client.rpush("welding_post_path",post_path)
-                        annotated_frame = results[0].plot()
-                        cv2.imwrite(img_path, annotated_frame)
-                        print("step9完成")
-                        #post("9",post_path)
+                    # if welding_machine_switch=="close" and steps[8]==False and steps[4]:
+                    #     steps[8]=True
+                    #     save_time=datetime.now().strftime('%Y%m%d_%H%M')
+                    #     #save_time=datetime.now().strftime('%Y%m%d_%H')
+                    #     img_path = f"{SAVE_IMG_PATH}/step9_{save_time}.jpg"
+                    #     post_path = f"{POST_IMG_PATH2}/step9_{save_time}.jpg"
+                    #     redis_client.rpush("welding_post_path",post_path)
+                    #     annotated_frame = results[0].plot()
+                    #     cv2.imwrite(img_path, annotated_frame)
+                    #     print("step9完成")
+                    #     #post("9",post_path)
+                    if welding_machine_switch=="close" and 'welding_exam_9' not in welding_exam_imgs and 'welding_exam_5' in welding_exam_imgs:
+                        save_image(welding_exam_imgs,results,"welding_exam_9",welding_exam_order)
                     
                 if video_source==WELDING_CH2_RTSP:
-                    if sweep==True and steps[11]==False:#打扫
-                        steps[11]=True
-                        save_time=datetime.now().strftime('%Y%m%d_%H%M')
-                        #save_time=datetime.now().strftime('%Y%m%d_%H')
-                        img_path = f"{SAVE_IMG_PATH}/step12_{save_time}.jpg"
-                        post_path = f"{POST_IMG_PATH2}/step12_{save_time}.jpg"
-                        redis_client.rpush("welding_post_path",post_path)
-                        annotated_frame = results[0].plot()
-                        cv2.imwrite(img_path, annotated_frame)
-                        print("step12完成")
+                    # if sweep==True and steps[11]==False:#打扫
+                    #     steps[11]=True
+                    #     save_time=datetime.now().strftime('%Y%m%d_%H%M')
+                    #     #save_time=datetime.now().strftime('%Y%m%d_%H')
+                    #     img_path = f"{SAVE_IMG_PATH}/step12_{save_time}.jpg"
+                    #     post_path = f"{POST_IMG_PATH2}/step12_{save_time}.jpg"
+                    #     redis_client.rpush("welding_post_path",post_path)
+                    #     annotated_frame = results[0].plot()
+                    #     cv2.imwrite(img_path, annotated_frame)
+                    #     print("step12完成")
                         #post("12",post_path)
-                    
-                    if welding_components=='in_position' and steps[3]==False:
-                        steps[3]=True
-                        save_time=datetime.now().strftime('%Y%m%d_%H%M')
-                        #save_time=datetime.now().strftime('%Y%m%d_%H')
-                        img_path = f"{SAVE_IMG_PATH}/step4_{save_time}.jpg"
-                        post_path = f"{POST_IMG_PATH2}/step4_{save_time}.jpg"
-                        redis_client.rpush("welding_post_path",post_path)
-                        annotated_frame = results[0].plot()
-                        cv2.imwrite(img_path, annotated_frame)
-                        print("step4完成")
-                        #post("4",post_path)
+                    if welding_exam_flag[11]==True and 'welding_exam_12' not in welding_exam_imgs:
+                        save_image(welding_exam_imgs,results,"welding_exam_12",welding_exam_order)
 
-                    if welding_components=='not_in_position' and steps[10]==False and steps[3]:
-                        steps[10]=True
-                        save_time=datetime.now().strftime('%Y%m%d_%H%M')
-                        #save_time=datetime.now().strftime('%Y%m%d_%H')
-                        img_path = f"{SAVE_IMG_PATH}/step11_{save_time}.jpg"
-                        post_path = f"{POST_IMG_PATH2}/step11_{save_time}.jpg"
-                        redis_client.rpush("welding_post_path",post_path)
-                        annotated_frame = results[0].plot()
-                        cv2.imwrite(img_path, annotated_frame)
-                        print("step11完成")
+                    # if welding_components=='in_position' and steps[3]==False:
+                    #     steps[3]=True
+                    #     save_time=datetime.now().strftime('%Y%m%d_%H%M')
+                    #     #save_time=datetime.now().strftime('%Y%m%d_%H')
+                    #     img_path = f"{SAVE_IMG_PATH}/step4_{save_time}.jpg"
+                    #     post_path = f"{POST_IMG_PATH2}/step4_{save_time}.jpg"
+                    #     redis_client.rpush("welding_post_path",post_path)
+                    #     annotated_frame = results[0].plot()
+                    #     cv2.imwrite(img_path, annotated_frame)
+                    #     print("step4完成")
+                    #     #post("4",post_path)
+
+                    if welding_components=='in_position' and 'welding_exam_4' not in welding_exam_imgs:
+                        save_image(welding_exam_imgs,results,"welding_exam_4",welding_exam_order)
+
+                    # if welding_components=='not_in_position' and steps[10]==False and steps[3]:
+                    #     steps[10]=True
+                    #     save_time=datetime.now().strftime('%Y%m%d_%H%M')
+                    #     #save_time=datetime.now().strftime('%Y%m%d_%H')
+                    #     img_path = f"{SAVE_IMG_PATH}/step11_{save_time}.jpg"
+                    #     post_path = f"{POST_IMG_PATH2}/step11_{save_time}.jpg"
+                    #     redis_client.rpush("welding_post_path",post_path)
+                    #     annotated_frame = results[0].plot()
+                    #     cv2.imwrite(img_path, annotated_frame)
+                    #     print("step11完成")
                         #post("11",post_path)
                     
-                    if welding==True and steps[6]==False:
-                        steps[6]=True
-                        save_time=datetime.now().strftime('%Y%m%d_%H%M')
-                        #save_time=datetime.now().strftime('%Y%m%d_%H')
-                        img_path = f"{SAVE_IMG_PATH}/step7_{save_time}.jpg"
-                        post_path = f"{POST_IMG_PATH2}/step7_{save_time}.jpg"
-                        redis_client.rpush("welding_post_path",post_path)
-                        annotated_frame = results[0].plot()
-                        cv2.imwrite(img_path, annotated_frame)
-                        print("step7完成")
+                    if welding_components=='not_in_position' and 'welding_exam_11' not in welding_exam_imgs and 'welding_exam_4' in welding_exam_imgs:
+                        save_image(welding_exam_imgs,results,"welding_exam_11",welding_exam_order)
+                    
+                    # if welding==True and steps[6]==False:
+                    #     steps[6]=True
+                    #     save_time=datetime.now().strftime('%Y%m%d_%H%M')
+                    #     #save_time=datetime.now().strftime('%Y%m%d_%H')
+                    #     img_path = f"{SAVE_IMG_PATH}/step7_{save_time}.jpg"
+                    #     post_path = f"{POST_IMG_PATH2}/step7_{save_time}.jpg"
+                    #     redis_client.rpush("welding_post_path",post_path)
+                    #     annotated_frame = results[0].plot()
+                    #     cv2.imwrite(img_path, annotated_frame)
+                    #     print("step7完成")
                         #post("8",post_path)
+                    if welding_exam_flag[6]==True and 'welding_exam_7' not in welding_exam_imgs:
+                        save_image(welding_exam_imgs,results,"welding_exam_7",welding_exam_order)
 
 
                 if video_source==WELDING_CH5_RTSP:
-                    if gloves==True and steps[7]==False:
-                        steps[7]=True
-                        save_time=datetime.now().strftime('%Y%m%d_%H%M')
-                        #save_time=datetime.now().strftime('%Y%m%d_%H')
-                        img_path = f"{SAVE_IMG_PATH}/step8_{save_time}.jpg"
-                        post_path = f"{POST_IMG_PATH2}/step8_{save_time}.jpg"
-                        redis_client.rpush("welding_post_path",post_path)
-                        annotated_frame = results[0].plot()
-                        cv2.imwrite(img_path, annotated_frame)
-                        print("step8完成")
+                    # if gloves==True and steps[7]==False:
+                    #     steps[7]=True
+                    #     save_time=datetime.now().strftime('%Y%m%d_%H%M')
+                    #     #save_time=datetime.now().strftime('%Y%m%d_%H')
+                    #     img_path = f"{SAVE_IMG_PATH}/step8_{save_time}.jpg"
+                    #     post_path = f"{POST_IMG_PATH2}/step8_{save_time}.jpg"
+                    #     redis_client.rpush("welding_post_path",post_path)
+                    #     annotated_frame = results[0].plot()
+                    #     cv2.imwrite(img_path, annotated_frame)
+                    #     print("step8完成")
                         #post("7",post_path)
+                    if welding_exam_flag[7]==True and 'welding_exam_8' not in welding_exam_imgs:
+                        save_image(welding_exam_imgs,results,"welding_exam_8",welding_exam_order)
 
-                    if grounding_wire=="connect" and steps[2]==False:
-                        steps[2]=True
-                        save_time=datetime.now().strftime('%Y%m%d_%H%M')
-                        #save_time=datetime.now().strftime('%Y%m%d_%H')
-                        img_path = f"{SAVE_IMG_PATH}/step3_{save_time}.jpg"
-                        post_path = f"{POST_IMG_PATH2}/step3_{save_time}.jpg"
-                        redis_client.rpush("welding_post_path",post_path)
-                        annotated_frame = results[0].plot()
-                        cv2.imwrite(img_path, annotated_frame)
-                        print("step3完成")
+                    # if grounding_wire=="connect" and steps[2]==False:
+                    #     steps[2]=True
+                    #     save_time=datetime.now().strftime('%Y%m%d_%H%M')
+                    #     #save_time=datetime.now().strftime('%Y%m%d_%H')
+                    #     img_path = f"{SAVE_IMG_PATH}/step3_{save_time}.jpg"
+                    #     post_path = f"{POST_IMG_PATH2}/step3_{save_time}.jpg"
+                    #     redis_client.rpush("welding_post_path",post_path)
+                    #     annotated_frame = results[0].plot()
+                    #     cv2.imwrite(img_path, annotated_frame)
+                    #     print("step3完成")
                         #post("3",post_path)
+                    
+                    if grounding_wire=="connect" and 'welding_exam_3' not in welding_exam_imgs:
+                        save_image(welding_exam_imgs,results,"welding_exam_3",welding_exam_order)
                             
-                    if grounding_wire=="disconnect" and steps[9]==False and steps[2]:
-                        steps[9]=True
-                        save_time=datetime.now().strftime('%Y%m%d_%H%M')
-                        #save_time=datetime.now().strftime('%Y%m%d_%H')
-                        img_path = f"{SAVE_IMG_PATH}/step10_{save_time}.jpg"
-                        post_path = f"{POST_IMG_PATH2}/step10_{save_time}.jpg"
-                        redis_client.rpush("welding_post_path",post_path)
-                        annotated_frame = results[0].plot()
-                        cv2.imwrite(img_path, annotated_frame)
-                        print("step10完成")
+                    # if grounding_wire=="disconnect" and steps[9]==False and steps[2]:
+                    #     steps[9]=True
+                    #     save_time=datetime.now().strftime('%Y%m%d_%H%M')
+                    #     #save_time=datetime.now().strftime('%Y%m%d_%H')
+                    #     img_path = f"{SAVE_IMG_PATH}/step10_{save_time}.jpg"
+                    #     post_path = f"{POST_IMG_PATH2}/step10_{save_time}.jpg"
+                    #     redis_client.rpush("welding_post_path",post_path)
+                    #     annotated_frame = results[0].plot()
+                    #     cv2.imwrite(img_path, annotated_frame)
+                    #     print("step10完成")
                         #post("10",post_path)
+                    if grounding_wire=="disconnect" and 'welding_exam_10' not in welding_exam_imgs and 'welding_exam_3' in welding_exam_imgs:
+                        save_image(welding_exam_imgs,results,"welding_exam_10",welding_exam_order)
                     
                             
-                    if mask==True and steps[5]==False:
-                        steps[5]=True
-                        save_time=datetime.now().strftime('%Y%m%d_%H%M')
-                        #save_time=datetime.now().strftime('%Y%m%d_%H')
-                        img_path = f"{SAVE_IMG_PATH}/step6_{save_time}.jpg"
-                        post_path = f"{POST_IMG_PATH2}/step6_{save_time}.jpg"
-                        redis_client.rpush("welding_post_path",post_path)
-                        annotated_frame = results[0].plot()
-                        cv2.imwrite(img_path, annotated_frame)
-                        print("step6完成")
+                    # if mask==True and steps[5]==False:
+                    #     steps[5]=True
+                    #     save_time=datetime.now().strftime('%Y%m%d_%H%M')
+                    #     #save_time=datetime.now().strftime('%Y%m%d_%H')
+                    #     img_path = f"{SAVE_IMG_PATH}/step6_{save_time}.jpg"
+                    #     post_path = f"{POST_IMG_PATH2}/step6_{save_time}.jpg"
+                    #     redis_client.rpush("welding_post_path",post_path)
+                    #     annotated_frame = results[0].plot()
+                    #     cv2.imwrite(img_path, annotated_frame)
+                    #     print("step6完成")
                         #post("6",post_path)
-            
+                    if welding_exam_flag[5]==True and 'welding_exam_6' not in welding_exam_imgs:
+                        save_image(welding_exam_imgs,results,"welding_exam_6",welding_exam_order)
             
                 start_event.set()          
                 # Display the annotated frame

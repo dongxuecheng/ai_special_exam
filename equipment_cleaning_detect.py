@@ -74,9 +74,7 @@ def process_video(model_path, video_source,start_event,stop_event,equipment_clea
                     classes = r.boxes.cls  
 
                     equipment_warning_zone_flag[0]=False
-                    # basket_warning_zone_flag=False#当检测不到则为False
-                    # basket_cleaning_up_flag=False
-                    #equipment_cleaning_flag[0]=False
+
                     for i in range(len(boxes)):
                         x1, y1, x2, y2 = boxes[i].tolist()
                         confidence = confidences[i].item()
@@ -91,7 +89,7 @@ def process_video(model_path, video_source,start_event,stop_event,equipment_clea
                             if point_in_region_flag:
                                 equipment_cleaning_flag[0]=True
                                 equipment_warning_zone_flag[0]=True
-                                equipment_cleaning_flag[11]=False
+                                #equipment_cleaning_flag[11]=False
                                 #print("警戒区")
 
 
@@ -104,7 +102,7 @@ def process_video(model_path, video_source,start_event,stop_event,equipment_clea
 
                             if(IoU(person_position,[x1,y1,x2,y2])>0.3):            
                                 equipment_cleaning_flag[2]=True
-                                equipment_cleaning_flag[7]=True
+                                #equipment_cleaning_flag[7]=True
                                 #print("座板和人有交集")
                             #else:
                                 #print("检测到座板")

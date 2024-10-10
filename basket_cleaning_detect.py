@@ -206,7 +206,6 @@ def process_video(model_path, video_source, start_event, stop_event, basket_clea
                     boxes = r.boxes.xyxy
                     masks = r.masks.xy
                     classes = r.boxes.cls 
-                    hoist=[]
                     for i in range(len(boxes)):
                         x1, y1, x2, y2 = boxes[i].tolist()
                         cls = int(classes[i].item())

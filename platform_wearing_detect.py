@@ -48,7 +48,7 @@ def process_video(model_path, video_source, start_event):
             if cap.get(cv2.CAP_PROP_POS_FRAMES) % 10 != 0:#跳帧检测，
                 continue
 
-            x, y, w, h = 920, 0, 587, 1436#剪裁画面的中心区域
+            x, y, w, h = 800, 0, 789, 1439#剪裁画面的中心区域
 
             # Crop the frame to the ROI
             frame = frame[y:y+h, x:x+w]
@@ -97,7 +97,7 @@ def process_video(model_path, video_source, start_event):
 
                     
                     #因为安全带检测有四个标签，当检测到两个及以上的时候，就认为有安全带
-                    wearing_items["belt"] = 1 if wearing_items["belt"] > 2 else 0
+                    wearing_items["belt"] = 1 if wearing_items["belt"] >= 2 else 0
 
                     wearing_items_nums = [wearing_items["belt"],  wearing_items["helmet"], wearing_items["shoes"]]
                     if redis_client.exists("platform_wearing_items_nums"):
