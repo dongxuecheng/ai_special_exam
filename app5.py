@@ -89,7 +89,7 @@ def basket_cleaning_detection():#开启平台搭设检测
 
 @app.route('/basket_cleaning_status', methods=['GET']) 
 def basket_cleaning_status():#获取平台搭设状态状态
-    if len(basket_cleaning_order):#平台搭设步骤还没有一个完成
+    if len(basket_cleaning_order)==0:#平台搭设步骤还没有一个完成
         app.logger.info('basket_cleaning_order is none')
 
         return jsonify({"status": "NONE"}), 200

@@ -7,29 +7,29 @@ from globals import stop_event,redis_client
 from config import SAVE_IMG_PATH,POST_IMG_PATH1,WELDING_WEARING_MODEL,WELDING_WEARING_VIDEO_SOURCES
 
 
-def init_wearing_detection():
-    redis_client.set("welding_wearing_human_in_postion",'False')
-    redis_client.delete("welding_wearing_items_nums")
-    redis_client.delete("welding_wearing_detection_img")
-    redis_client.set("welding_wearing_detection_img_flag",'False')
+# def init_wearing_detection():
+#     redis_client.set("welding_wearing_human_in_postion",'False')
+#     redis_client.delete("welding_wearing_items_nums")
+#     redis_client.delete("welding_wearing_detection_img")
+#     redis_client.set("welding_wearing_detection_img_flag",'False')
 
-def start_wearing_detection(start_events):
-        # Create threads for each video stream and model
-    threads = []
-    for model_path in WELDING_WEARING_MODEL:
-        event = threading.Event()
-        start_events.append(event)
-        thread = threading.Thread(target=process_video, args=(model_path,WELDING_WEARING_VIDEO_SOURCES,event))
-        threads.append(thread)
-        thread.daemon=True
-        thread.start()
+# def start_wearing_detection(start_events):
+#         # Create threads for each video stream and model
+#     threads = []
+#     for model_path in WELDING_WEARING_MODEL:
+#         event = threading.Event()
+#         start_events.append(event)
+#         thread = threading.Thread(target=process_video, args=(model_path,WELDING_WEARING_VIDEO_SOURCES,event))
+#         threads.append(thread)
+#         thread.daemon=True
+#         thread.start()
 
 
-    # Wait for all threads to complete
-    for thread in threads:
-        thread.join()
+#     # Wait for all threads to complete
+#     for thread in threads:
+#         thread.join()
 
-def process_video(model_path, video_source, start_event):
+def process_video(model_path, video_source, start_event, stop_event,welding_wearing_human_in_postion, welding_wearing_items_nums, welding_wearing_detection_img_flag, welding_wearing_detection_img):
 
     
     model = YOLO(model_path)
@@ -69,7 +69,7 @@ def process_video(model_path, video_source, start_event):
                         'gloves': 0,
                         'shoes': 0
                 }
-                
+
                 for i in range(len(boxes)):
                     x1, y1, x2, y2 = boxes[i].tolist()
                     confidence = confidences[i].item()
@@ -81,26 +81,44 @@ def process_video(model_path, video_source, start_event):
                     #     continue  # 跳过不在区域内的检测框
                     
                     if model_path==WELDING_WEARING_MODEL[0]:#yolov8s，专门用来检测人
-                        if label=="person" and redis_client.get("welding_wearing_human_in_postion")=='False':
-                            redis_client.set("welding_wearing_human_in_postion",'True')
+                        # if label=="person" and redis_client.get("welding_wearing_human_in_postion")=='False':
+                        #     redis_client.set("welding_wearing_human_in_postion",'True')
+                        if label=="person" and not welding_wearing_human_in_postion.value:
+                            welding_wearing_human_in_postion.value=True
                     else:
                         wearing_items[label] += 1
 
 
                 if model_path==WELDING_WEARING_MODEL[1]:
-                    welding_wearing_items_nums = [wearing_items["pants"], wearing_items["jacket"], wearing_items["helmet"], wearing_items["gloves"], wearing_items["shoes"]]
-                    if redis_client.exists("welding_wearing_items_nums"):
-                        redis_client.delete("welding_wearing_items_nums")
-                    redis_client.rpush("welding_wearing_items_nums", *welding_wearing_items_nums)
+                    # welding_wearing_items_nums = [wearing_items["pants"], wearing_items["jacket"], wearing_items["helmet"], wearing_items["gloves"], wearing_items["shoes"]]
+                    # if redis_client.exists("welding_wearing_items_nums"):
+                    #     redis_client.delete("welding_wearing_items_nums")
+                    # redis_client.rpush("welding_wearing_items_nums", *welding_wearing_items_nums)
+                    if welding_wearing_human_in_postion.value:
+                        welding_wearing_items_nums[0] = wearing_items["pants"]
+                        welding_wearing_items_nums[1] = wearing_items["jacket"]
+                        welding_wearing_items_nums[2] = wearing_items["helmet"]
+                        welding_wearing_items_nums[3] = wearing_items["gloves"]
+                        welding_wearing_items_nums[4] = wearing_items["shoes"]
+                            # for i in range(len(welding_wearing_items_nums)):
+                            #     print(f"{welding_wearing_items_nums[i]} {welding_wearing_items_nums[i]}")
+                        #print(welding_wearing_items_nums)
 
-
-                    if redis_client.get("welding_wearing_detection_img_flag")=='True' and not redis_client.exists("welding_wearing_detection_img"):
+                    # if redis_client.get("welding_wearing_detection_img_flag")=='True' and not redis_client.exists("welding_wearing_detection_img"):
+                    #     save_time=datetime.now().strftime('%Y%m%d_%H%M')
+                    #     imgpath = f"{SAVE_IMG_PATH}/welding_wearing_detection_{save_time}.jpg"
+                    #     post_path= f"{POST_IMG_PATH1}/welding_wearing_detection_{save_time}.jpg"
+                    #     annotated_frame = results[0].plot()
+                    #     cv2.imwrite(imgpath, annotated_frame)
+                    #     redis_client.set("welding_wearing_detection_img",post_path)
+                    if welding_wearing_detection_img_flag.value and 'wearing_img' not in welding_wearing_detection_img:
                         save_time=datetime.now().strftime('%Y%m%d_%H%M')
                         imgpath = f"{SAVE_IMG_PATH}/welding_wearing_detection_{save_time}.jpg"
                         post_path= f"{POST_IMG_PATH1}/welding_wearing_detection_{save_time}.jpg"
                         annotated_frame = results[0].plot()
                         cv2.imwrite(imgpath, annotated_frame)
-                        redis_client.set("welding_wearing_detection_img",post_path)
+                        welding_wearing_detection_img['wearing_img']=post_path
+                        #welding_wearing_detection_img_flag.value=False
 
 
                 start_event.set()    

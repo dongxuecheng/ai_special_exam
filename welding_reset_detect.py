@@ -13,35 +13,62 @@ from globals import oil_barrel_flag,main_switch_flag,ground_wire_flag,welding_co
 from globals import lock,redis_client,stop_event
 
 
-def init_rest_detection():
-    redis_client.delete("welding_reset_post_path")#删除该列表welding_reset_post_path
+# def init_rest_detection():
+#     redis_client.delete("welding_reset_post_path")#删除该列表welding_reset_post_path
     
-    redis_client.set("welding_main_switch_save_img",'False')
-    redis_client.set("welding_oil_barrel_save_img",'False')
-    redis_client.set("welding_ground_wire_save_img",'False')
-    redis_client.set("welding_components_save_img",'False')
-    redis_client.set("welding_machine_switch_save_img",'False')
+#     redis_client.set("welding_main_switch_save_img",'False')
+#     redis_client.set("welding_oil_barrel_save_img",'False')
+#     redis_client.set("welding_ground_wire_save_img",'False')
+#     redis_client.set("welding_components_save_img",'False')
+#     redis_client.set("welding_machine_switch_save_img",'False')
 
 
-def start_reset_detection(start_events):
-        # Create threads for each video stream and model
-    threads = []
-    for model_path, video_source in zip(WELDING_MODEL_PATHS, WELDING_VIDEO_SOURCES):
-        event = threading.Event()
-        start_events.append(event)
-        thread = threading.Thread(target=process_video, args=(model_path, video_source,event))
-        threads.append(thread)
-        thread.daemon=True
-        thread.start()
+# def start_reset_detection(start_events):
+#         # Create threads for each video stream and model
+#     threads = []
+#     for model_path, video_source in zip(WELDING_MODEL_PATHS, WELDING_VIDEO_SOURCES):
+#         event = threading.Event()
+#         start_events.append(event)
+#         thread = threading.Thread(target=process_video, args=(model_path, video_source,event))
+#         threads.append(thread)
+#         thread.daemon=True
+#         thread.start()
 
 
-    # Wait for all threads to complete
-    for thread in threads:
-        thread.join()
-        print("复位检测子线程结束")
+#     # Wait for all threads to complete
+#     for thread in threads:
+#         thread.join()
+#         print("复位检测子线程结束")
+
+
+def save_image(welding_reset_imgs,results, step_name):
+
+    save_time = datetime.now().strftime('%Y%m%d_%H%M')
+    imgpath = f"{SAVE_IMG_PATH}/{step_name}_{save_time}.jpg"
+    postpath = f"{POST_IMG_PATH2}/{step_name}_{save_time}.jpg"
+    annotated_frame = results[0].plot()
+    # if step_name == "equipment_step_1":
+    #     annotated_frame = cv2.polylines(annotated_frame, [region.reshape(-1, 1, 2) for region in EQUIPMENT_WARNING_ZONE_REGION], isClosed=True, color=(0, 255, 0), thickness=4)
+    # elif step_name == "equipment_step_2":
+    #     annotated_frame = cv2.polylines(annotated_frame, [region.reshape(-1, 1, 2) for region in EQUIPMENT_ANCHOR_DEVICE_REGION], isClosed=True, color=(0, 255, 0), thickness=4)
+    # elif step_name == "equipment_step_4":
+    #     annotated_frame = cv2.polylines(annotated_frame, [region.reshape(-1, 1, 2) for region in EQUIPMENT_WORK_ROPE_REGION], isClosed=True, color=(0, 255, 0), thickness=4)
+    # elif step_name == "equipment_step_5":
+    #     annotated_frame = cv2.polylines(annotated_frame, [region.reshape(-1, 1, 2) for region in EQUIPMENT_SAFETY_ROPE_REGION], isClosed=True, color=(0, 255, 0), thickness=4)
+    # elif step_name == "equipment_step_10":
+    #     annotated_frame = cv2.polylines(annotated_frame, [region.reshape(-1, 1, 2) for region in EQUIPMENT_CLEANING_OPERATION_REGION], isClosed=True, color=(0, 255, 0), thickness=4)
+    # # elif step_name == "equipment_step_4":
+    #     annotated_frame = cv2.polylines(annotated_frame, BASKET_PLATFORM_REGION.reshape(-1, 1, 2), isClosed=True, color=(0, 255, 0), thickness=4)
+    # elif step_name == "equipment_step_6":
+    #     annotated_frame = cv2.polylines(annotated_frame, [region.reshape(-1, 1, 2) for region in BASKET_SAFETY_LOCK_REGION], isClosed=True, color=(0, 255, 0), thickness=4)
+    
+    cv2.imwrite(imgpath, annotated_frame)
+    welding_reset_imgs[step_name]=postpath
+
+    #equipment_cleaning_order.append(step_name)
 
 # Function to process video with YOLO model
-def process_video(model_path, video_source, start_event):
+def process_video(model_path, video_source, start_event, stop_event,welding_reset_flag, welding_reset_imgs):
     # Load YOLO model
     model = YOLO(model_path)
     #results = model.predict(video_source,stream=True,verbose=False,conf=0.4,device='0')#这里的results是一个生成器
@@ -49,6 +76,7 @@ def process_video(model_path, video_source, start_event):
     # Loop through the video frames
     while cap.isOpened():
         if stop_event.is_set():#控制停止推理
+            print("焊接复位子进程停止检测")
             break
         # Read a frame from the video
         success, frame = cap.read()
@@ -63,7 +91,7 @@ def process_video(model_path, video_source, start_event):
             # Run YOLOv8 inference on the frame
             results = model.predict(frame,verbose=False,conf=0.4)
 
-            global oil_barrel_flag,main_switch_flag,ground_wire_flag,welding_components_flag,welding_machine_switch_flag
+            #global oil_barrel_flag,main_switch_flag,ground_wire_flag,welding_components_flag,welding_machine_switch_flag
 
     #with lock:
             for r in results:
@@ -80,7 +108,7 @@ def process_video(model_path, video_source, start_event):
                     if r.probs.top1conf>0.6:
                         label=model.names[r.probs.top1]
                         
-                        welding_components_flag=True if label == "component" else False
+                        welding_reset_flag[3]=True if label == "component" else False
                     else:
                         continue
 
@@ -120,22 +148,22 @@ def process_video(model_path, video_source, start_event):
                             #print(is_inside)
                             
                             if is_inside>=0 :
-                                oil_barrel_flag=False #表示油桶在危险区域
+                                welding_reset_flag[0]=False #表示油桶在危险区域
                             else:
-                                oil_barrel_flag=True 
+                                welding_reset_flag[0]=True 
 
                         if label=='turnon':
-                            main_switch_flag=True
+                            welding_reset_flag[1]=True
                         if label=='turnoff':
-                            main_switch_flag=False
+                            welding_reset_flag[1]=False
 
                         if label== "open":#检测焊机开关
-                            welding_machine_switch_flag = True
+                            welding_reset_flag[4] = True
 
 
 
                         if label=="close":#检测焊机开关
-                            welding_machine_switch_flag = False
+                            welding_reset_flag[4] = False
 
 
                         if label=="grounding_wire" :
@@ -149,96 +177,109 @@ def process_video(model_path, video_source, start_event):
 
 
                             if iou>0 :
-                                ground_wire_flag=True #表示搭铁线连接在焊台上
+                                welding_reset_flag[2]=True #表示搭铁线连接在焊台上
                             else:
-                                ground_wire_flag=False #表示未连接上
+                                welding_reset_flag[2]=False #表示未连接上
 
-                flag_count = sum([oil_barrel_flag, main_switch_flag, ground_wire_flag, welding_components_flag, welding_machine_switch_flag])
-                redis_client.set("welding_reset_flag",flag_count)
+                # flag_count = sum([oil_barrel_flag, main_switch_flag, ground_wire_flag, welding_components_flag, welding_machine_switch_flag])
+                # redis_client.set("welding_reset_flag",flag_count)
                 #print("主开关",main_switch_flag)
 
                 if video_source == WELDING_CH4_RTSP :#检测到总开关
-                        if main_switch_flag and redis_client.get("welding_main_switch_save_img")=='False':
-                            print("当前总开关没有复位")##焊前检查只保存一次
-                            redis_client.set("welding_main_switch_save_img",'True')
-                            #save_time=datetime.now().strftime('%Y%m%d_%H%M')
-                            save_time=datetime.now().strftime('%Y%m%d_%H')
-                            imgpath = f"{SAVE_IMG_PATH}/welding_resetStep2_{save_time}.jpg"
-                            post_path = f"{POST_IMG_PATH2}/welding_resetStep2_{save_time}.jpg"
-                            redis_client.rpush("welding_reset_post_path",post_path)#welding_reset_post_path为一个列表，存储需要发送的图片路径，rpush为从右侧加入
-                            annotated_frame = results[0].plot()
-                            cv2.imwrite(imgpath, annotated_frame)
-
+                        # if main_switch_flag and redis_client.get("welding_main_switch_save_img")=='False':
+                        #     print("当前总开关没有复位")##焊前检查只保存一次
+                        #     redis_client.set("welding_main_switch_save_img",'True')
+                        #     #save_time=datetime.now().strftime('%Y%m%d_%H%M')
+                        #     save_time=datetime.now().strftime('%Y%m%d_%H')
+                        #     imgpath = f"{SAVE_IMG_PATH}/welding_resetStep2_{save_time}.jpg"
+                        #     post_path = f"{POST_IMG_PATH2}/welding_resetStep2_{save_time}.jpg"
+                        #     redis_client.rpush("welding_reset_post_path",post_path)#welding_reset_post_path为一个列表，存储需要发送的图片路径，rpush为从右侧加入
+                        #     annotated_frame = results[0].plot()
+                        #     cv2.imwrite(imgpath, annotated_frame)
+                    if welding_reset_flag[1] and 'reset_step_2' not in welding_reset_imgs:
+                        print("当前总开关没有复位")
+                        save_image(welding_reset_imgs,results, "reset_step_2")
 
 
                                 
                 if video_source == WELDING_CH3_RTSP :##检测油桶{0: 'dump'},在安全区域时保存图片一张
-                    if oil_barrel_flag and redis_client.get("welding_oil_barrel_save_img")=='False':
+                    # if oil_barrel_flag and redis_client.get("welding_oil_barrel_save_img")=='False':
+                    #     print("当前油桶没有复位")
+                    #     redis_client.set("welding_oil_barrel_save_img",'True')
+                    #     #save_time=datetime.now().strftime('%Y%m%d_%H%M')
+                    #     save_time=datetime.now().strftime('%Y%m%d_%H')
+                    #     imgpath = f"{SAVE_IMG_PATH}/welding_resetStep1_{save_time}.jpg"
+                    #     post_path = f"{POST_IMG_PATH2}/welding_resetStep1_{save_time}.jpg"
+                    #     redis_client.rpush("welding_reset_post_path",post_path)
+                    #     annotated_frame = results[0].plot()
+                    #     cv2.polylines(annotated_frame,[WELDING_REGION2.reshape(-1,1,2)],isClosed=True,color=(0,255,0),thickness=4)
+                    #     cv2.imwrite(imgpath, annotated_frame)
+                    #     #reset_post(welding_resetStep='1',path=post_path)
+                    #     #post(step='2',path=post_path)
+                    if welding_reset_flag[0] and 'reset_step_1' not in welding_reset_imgs:
                         print("当前油桶没有复位")
-                        redis_client.set("welding_oil_barrel_save_img",'True')
-                        #save_time=datetime.now().strftime('%Y%m%d_%H%M')
-                        save_time=datetime.now().strftime('%Y%m%d_%H')
-                        imgpath = f"{SAVE_IMG_PATH}/welding_resetStep1_{save_time}.jpg"
-                        post_path = f"{POST_IMG_PATH2}/welding_resetStep1_{save_time}.jpg"
-                        redis_client.rpush("welding_reset_post_path",post_path)
-                        annotated_frame = results[0].plot()
-                        cv2.polylines(annotated_frame,[WELDING_REGION2.reshape(-1,1,2)],isClosed=True,color=(0,255,0),thickness=4)
-                        cv2.imwrite(imgpath, annotated_frame)
-                        #reset_post(welding_resetStep='1',path=post_path)
-                        #post(step='2',path=post_path)
+                        save_image(welding_reset_imgs,results, "reset_step_1")
 
                 if video_source == WELDING_CH1_RTSP:#检测到焊机开关
-                        if welding_machine_switch_flag and redis_client.get("welding_machine_switch_save_img")=='False':
-                            print("当前焊机开关没有复位")##焊前检查只保存一次
-                            redis_client.set("welding_machine_switch_save_img",'True')
-                            #save_time=datetime.now().strftime('%Y%m%d_%H%M')
-                            save_time=datetime.now().strftime('%Y%m%d_%H')
-                            imgpath = f"{SAVE_IMG_PATH}/welding_resetStep5_{save_time}.jpg"
-                            post_path = f"{POST_IMG_PATH2}/welding_resetStep5_{save_time}.jpg"
-                            redis_client.rpush("welding_reset_post_path",post_path)
-                            #cv2.imwrite(imgpath, annotator.result())
-                            annotated_frame = results[0].plot()
-                            cv2.polylines(annotated_frame,[WELDING_REGION3.reshape(-1,1,2)],isClosed=True,color=(0,255,0),thickness=4)
-                            cv2.imwrite(imgpath, annotated_frame)
-                            #reset_post(welding_resetStep='5',path=post_path)
-                            #post(step='2',path=post_path)
-            
+                        # if welding_machine_switch_flag and redis_client.get("welding_machine_switch_save_img")=='False':
+                        #     print("当前焊机开关没有复位")##焊前检查只保存一次
+                        #     redis_client.set("welding_machine_switch_save_img",'True')
+                        #     #save_time=datetime.now().strftime('%Y%m%d_%H%M')
+                        #     save_time=datetime.now().strftime('%Y%m%d_%H')
+                        #     imgpath = f"{SAVE_IMG_PATH}/welding_resetStep5_{save_time}.jpg"
+                        #     post_path = f"{POST_IMG_PATH2}/welding_resetStep5_{save_time}.jpg"
+                        #     redis_client.rpush("welding_reset_post_path",post_path)
+                        #     #cv2.imwrite(imgpath, annotator.result())
+                        #     annotated_frame = results[0].plot()
+                        #     cv2.polylines(annotated_frame,[WELDING_REGION3.reshape(-1,1,2)],isClosed=True,color=(0,255,0),thickness=4)
+                        #     cv2.imwrite(imgpath, annotated_frame)
+                        #     #reset_post(welding_resetStep='5',path=post_path)
+                        #     #post(step='2',path=post_path)
+                    if welding_reset_flag[4] and 'reset_step_5' not in welding_reset_imgs:
+                        print("当前焊机开关没有复位")
+                        save_image(welding_reset_imgs,results, "reset_step_5")
 
                 if video_source == WELDING_CH5_RTSP:
-                    if ground_wire_flag and redis_client.get("welding_ground_wire_save_img")=='False':
+                    # if ground_wire_flag and redis_client.get("welding_ground_wire_save_img")=='False':
+                    #     print("搭铁线没有复位")
+                    #     redis_client.set("welding_ground_wire_save_img",'True')
+                    #     #save_time=datetime.now().strftime('%Y%m%d_%H%M')  
+                    #     save_time=datetime.now().strftime('%Y%m%d_%H')
+                    #     imgpath = f"{SAVE_IMG_PATH}/welding_resetStep3_{save_time}.jpg"
+                    #     post_path = f"{POST_IMG_PATH2}/welding_resetStep3_{save_time}.jpg"
+                    #     redis_client.rpush("welding_reset_post_path",post_path)
+                    #     # result_image = annotator.result()
+                    #     # cv2.polylines(result_image, [WELDING_REGION3.reshape(-1, 1, 2)], isClosed=True, color=(0, 255, 0), thickness=4)
+                    #     # cv2.imwrite(imgpath, result_image)
+                    #     annotated_frame = results[0].plot()
+                    #     cv2.imwrite(imgpath, annotated_frame)
+                    #     #reset_post(welding_resetStep="3",path=post_path)
+                    #     #time.sleep(1)
+                    #     #post(step='4',path=post_path)
+                    if welding_reset_flag[2] and 'reset_step_3' not in welding_reset_imgs:
                         print("搭铁线没有复位")
-                        redis_client.set("welding_ground_wire_save_img",'True')
-                        #save_time=datetime.now().strftime('%Y%m%d_%H%M')  
-                        save_time=datetime.now().strftime('%Y%m%d_%H')
-                        imgpath = f"{SAVE_IMG_PATH}/welding_resetStep3_{save_time}.jpg"
-                        post_path = f"{POST_IMG_PATH2}/welding_resetStep3_{save_time}.jpg"
-                        redis_client.rpush("welding_reset_post_path",post_path)
-                        # result_image = annotator.result()
-                        # cv2.polylines(result_image, [WELDING_REGION3.reshape(-1, 1, 2)], isClosed=True, color=(0, 255, 0), thickness=4)
-                        # cv2.imwrite(imgpath, result_image)
-                        annotated_frame = results[0].plot()
-                        cv2.imwrite(imgpath, annotated_frame)
-                        #reset_post(welding_resetStep="3",path=post_path)
-                        #time.sleep(1)
-                        #post(step='4',path=post_path)
+                        save_image(welding_reset_imgs,results, "reset_step_3")
 
                 if video_source == WELDING_CH2_RTSP:
-                    if welding_components_flag and redis_client.get("welding_components_save_img")=='False':
-                        print("焊件没有复位")
-                        redis_client.set("welding_components_save_img",'True')
-                        #save_time=datetime.now().strftime('%Y%m%d_%H%M')  
-                        save_time=datetime.now().strftime('%Y%m%d_%H')
-                        imgpath = f"{SAVE_IMG_PATH}/welding_resetStep4_{save_time}.jpg"
-                        post_path = f"{POST_IMG_PATH2}/welding_resetStep4_{save_time}.jpg"
-                        redis_client.rpush("welding_reset_post_path",post_path)
-                        # result_image = annotator.result()
-                        # cv2.polylines(result_image, [REGION4.reshape(-1, 1, 2)], isClosed=True, color=(0, 255, 0), thickness=4)
-                        # cv2.imwrite(imgpath, result_image)
-                        annotated_frame = results[0].plot()
-                        cv2.imwrite(imgpath, annotated_frame)
+                    # if welding_components_flag and redis_client.get("welding_components_save_img")=='False':
+                    #     print("焊件没有复位")
+                    #     redis_client.set("welding_components_save_img",'True')
+                    #     #save_time=datetime.now().strftime('%Y%m%d_%H%M')  
+                    #     save_time=datetime.now().strftime('%Y%m%d_%H')
+                    #     imgpath = f"{SAVE_IMG_PATH}/welding_resetStep4_{save_time}.jpg"
+                    #     post_path = f"{POST_IMG_PATH2}/welding_resetStep4_{save_time}.jpg"
+                    #     redis_client.rpush("welding_reset_post_path",post_path)
+                    #     # result_image = annotator.result()
+                    #     # cv2.polylines(result_image, [REGION4.reshape(-1, 1, 2)], isClosed=True, color=(0, 255, 0), thickness=4)
+                    #     # cv2.imwrite(imgpath, result_image)
+                    #     annotated_frame = results[0].plot()
+                    #     cv2.imwrite(imgpath, annotated_frame)
 
                         #reset_post(welding_resetStep='4',path=post_path)
                         #post(step='4',path=post_path)
+                    if welding_reset_flag[3] and 'reset_step_4' not in welding_reset_imgs:
+                        print("当前焊件没有复位")
+                        save_image(welding_reset_imgs,results, "reset_step_4")
 
                 #运行到这里表示一个线程检测完毕
                 start_event.set()

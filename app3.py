@@ -54,7 +54,7 @@ def wearing_status():#开始登录时，检测是否需要复位，若需要，�
             return jsonify({"status": "NONE"}), 200##表示穿戴检测线程还未检测完
         
         wearing_items_nums = redis_client.lrange("platform_wearing_items_nums", 0, -1)
-        wearing_items_list = ['belt', 'helmet',  'shoe']
+        wearing_items_list = ['belt', 'helmet',  'shoes']
         json_array = []
         for num, item in zip(wearing_items_nums, wearing_items_list):
             json_object = {"name": item, "number": num}
