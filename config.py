@@ -124,10 +124,10 @@ BASKET_CLEANING_CH6_RTSP='rtsp://admin:yaoan1234@172.16.22.242/cam/realmonitor?c
 
 BASKET_CLEANING_VIDEO_SOURCES=[BASKET_CLEANING_CH4_RTSP,
                                BASKET_CLEANING_CH5_RTSP,
-                               BASKET_CLEANING_CH6_RTSP,
-                               BASKET_CLEANING_CH6_RTSP,
-                               BASKET_CLEANING_CH6_RTSP,
                                BASKET_CLEANING_CH6_RTSP]
+                            #    BASKET_CLEANING_CH6_RTSP,
+                            #    BASKET_CLEANING_CH6_RTSP,
+                            #    BASKET_CLEANING_CH6_RTSP]
 
 BASKET_CLEANING_MODEL_SOURCES=[BASKET_CLEANING_CH4_POSE_MODEL,
                                BASKET_CLEANING_CH5_DETECT_MODEL,
@@ -184,11 +184,11 @@ EQUIPMENT_CLEANING_CH8_DETECT_MODEL='/mnt/xcd/code/yolov8/runs/detect/train50/we
 EQUIPMENT_CLEANING_CH8_SAFETY_BELT_DETECT_MODEL='/mnt/xcd/code/yolov8/runs/detect/train51/weights/last.pt'
 
 EQUIPMENT_CLEANING_VIDEO_SOURCES=[EQUIPMENT_CLEANING_CH3_RTSP,
-                                  EQUIPMENT_CLEANING_CH3_RTSP,
+                                  #EQUIPMENT_CLEANING_CH3_RTSP,
                                   #EQUIPMENT_CLEANING_CH10_RTSP,
                                   EQUIPMENT_CLEANING_CH8_RTSP,
-                                  EQUIPMENT_CLEANING_CH8_RTSP,
-                                  EQUIPMENT_CLEANING_CH8_RTSP
+                                  #EQUIPMENT_CLEANING_CH8_RTSP,
+                                  #EQUIPMENT_CLEANING_CH8_RTSP
 ]
 
 EQUIPMENT_CLEANING_MODEL_SOURCES=[EQUIPMENT_CLEANING_CH3_DETECT_MODEL1,

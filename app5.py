@@ -1,12 +1,11 @@
 import re
-# import threading
-# import time
-from flask import Flask, jsonify,send_from_directory
-#from basket_cleaning_detect import start_basket_cleaning_detection,init_basket_cleaning_detection
-#from globals import inference_thread, stop_event,redis_client
-import multiprocessing as mp
 
-from basket_cleaning_detect import process_video
+from flask import Flask, jsonify,send_from_directory
+
+import multiprocessing as mp
+from multiprocessing import Queue
+
+from basket_cleaning_detect import process_video,video_decoder,process_video_new
 from config import BASKET_CLEANING_MODEL_SOURCES, BASKET_CLEANING_VIDEO_SOURCES
 
 app = Flask(__name__)
@@ -32,6 +31,11 @@ basket_cleaning_imgs = manager.dict()  #用于存储各个步骤的图片
 #使用manager速度较慢
 
 basket_seg_region=manager.dict()#用于存储吊篮的分割区域
+frame_queue_list = [Queue(maxsize=50) for _ in range(6)]  # 创建6个队列，用于存储视频帧
+
+
+
+
 
 def reset_shared_variables():
     # 1. 重置 basket_cleaning_flag
@@ -50,6 +54,10 @@ def reset_shared_variables():
     # 3. 清空 basket_cleaning_imgs
     basket_cleaning_imgs.clear()
     basket_seg_region.clear()
+    
+    for queue in frame_queue_list:
+        while not queue.empty():
+            queue.get()
 
 
 
@@ -57,19 +65,27 @@ def reset_shared_variables():
 
 @app.route('/basket_cleaning_detection', methods=['GET'])
 def basket_cleaning_detection():#开启平台搭设检测
+
     if not any(p.is_alive() for p in processes):  # 防止重复开启检测服务
         stop_event.clear()
-
+        
+        
         # 使用本地的 start_events 列表，不使用 Manager
         start_events = []  # 存储每个进程的启动事件
-
+        for video_source in BASKET_CLEANING_VIDEO_SOURCES:
+            start_event = mp.Event()  # 为每个进程创建一个独立的事件
+            start_events.append(start_event)  # 加入 start_events 列表
+            process = mp.Process(target=video_decoder, args=(video_source,frame_queue_list, start_event, stop_event))
+            processes.append(process)
+            process.start()
+            print("拉流子进程运行中")
         
         # 启动多个进程进行设备清洗检测
-        for model_path, video_source in zip(BASKET_CLEANING_MODEL_SOURCES, BASKET_CLEANING_VIDEO_SOURCES):
+        for model_path, video_source in zip(BASKET_CLEANING_MODEL_SOURCES, frame_queue_list):
             start_event = mp.Event()  # 为每个进程创建一个独立的事件
             start_events.append(start_event)  # 加入 start_events 列表
 
-            process = mp.Process(target=process_video, args=(model_path, video_source, start_event, stop_event, basket_cleaning_flag, basket_cleaning_order, basket_cleaning_imgs, basket_cleaning_warning_zone_flag,basket_seg_region))
+            process = mp.Process(target=process_video_new, args=(model_path, video_source, start_event, stop_event, basket_cleaning_flag, basket_cleaning_order, basket_cleaning_imgs, basket_cleaning_warning_zone_flag,basket_seg_region))
             processes.append(process)
             process.start()
             print("吊篮清洗子进程运行中")
@@ -87,6 +103,10 @@ def basket_cleaning_detection():#开启平台搭设检测
         app.logger.info("reset_detection already running")
         return jsonify({"status": "ALREADY_RUNNING"}), 200  
 
+
+
+
+
 @app.route('/basket_cleaning_status', methods=['GET']) 
 def basket_cleaning_status():#获取平台搭设状态状态
     if len(basket_cleaning_order)==0:#平台搭设步骤还没有一个完成
@@ -95,8 +115,6 @@ def basket_cleaning_status():#获取平台搭设状态状态
         return jsonify({"status": "NONE"}), 200
     
     else:
-
-        #basket_cleaning_order = redis_client.lrange("basket_cleaning_order", 0, -1)
 
         json_array = []
         for value in basket_cleaning_order:
@@ -127,7 +145,7 @@ def stop_inference_internal():
         for process in processes:
             if process.is_alive():
                 process.join()  # 等待每个子进程结束
-                print("单人吊具清洗子进程运行结束")
+                #print("单人吊具清洗子进程运行结束")
         
         processes = []  # 清空进程列表，释放资源
         app.logger.info('detection stopped')
