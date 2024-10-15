@@ -49,7 +49,7 @@ def reset_shared_variables():
     basket_cleaning_warning_zone_flag[1]=False
 
     # 2. 清空 basket_cleaning_order
-
+    basket_cleaning_order[:] = []
 
     # 3. 清空 basket_cleaning_imgs
     basket_cleaning_imgs.clear()

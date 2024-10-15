@@ -113,7 +113,7 @@ PLATFORM_WEARING_VIDEO_SOURCES=PLATFORM_CH1_RTSP
 
 BASKET_CLEANING_CH4_POSE_MODEL='/mnt/xcd/code/ai_special_exam/weights/yolov8s-pose1.pt'
 BASKET_CLEANING_CH5_DETECT_MODEL='/mnt/xcd/code/ai_special_exam/weights/ch6detect_basker_9_14_a_1.pt'
-BASKET_CLEANING_CH6_POSE_MODEL='/mnt/xcd/code/ai_special_exam/weights/yolov8s-pose2.pt'
+BASKET_CLEANING_CH6_POSE_MODEL='/mnt/xcd/code/yolov8/yolo11m-pose.pt'
 BASKET_CLEANING_CH6_DETECT_MODEL='/mnt/xcd/code/ai_special_exam/weights/ch6detect_basker_9_14_a.pt'
 BASKET_CLEANING_CH6_SEG_MODEL='/mnt/xcd/code/ai_special_exam/weights/basket_seg_9_13.pt'
 BASKET_CLEANING_CH6_SAFETY_BELT_MODEL='/mnt/xcd/code/yolov8/runs/detect/train51/weights/last.pt'
@@ -174,7 +174,7 @@ EQUIPMENT_CLEANING_CH8_RTSP='rtsp://admin:yaoan1234@172.16.22.44/cam/realmonitor
 #EQUIPMENT_CLEANING_CH10_RTSP='rtsp://admin:yaoan1234@172.16.22.44/cam/realmonitor?channel=1&subtype=0'
 
 
-EQUIPMENT_CLEANING_CH3_DETECT_MODEL1='/mnt/xcd/code/yolov8/runs/detect/train50/weights/last.pt'
+EQUIPMENT_CLEANING_CH3_DETECT_MODEL1='/mnt/xcd/code/yolov8/runs/detect/train52/weights/last.pt'#增加了座板的标签的模型
 EQUIPMENT_CLEANING_CH3_DETECT_MODEL2='/mnt/xcd/code/ai_special_exam/weights/yolov8s.pt'
 #EQUIPMENT_CLEANING_CH10_DETECT_MODEL1='/mnt/xcd/code/ai_special_exam/weights/ch6detect_basket_9_6_1.pt'
 EQUIPMENT_CLEANING_CH8_POSE_MODEL='/mnt/xcd/code/ai_special_exam/weights/yolov8s-pose2.pt'

@@ -487,9 +487,9 @@ def process_video_new(model_path, video_source, start_event, stop_event, basket_
                 #print(point_in_region([709,1017],BASKET_PLATFORM_REGION))
                 #空载判断逻辑
 
-                if not basket_person_flag and 'platform' in basket_seg_region:
+                if not basket_person_flag and 'platform' in basket_seg_region and not basket_cleaning_flag[7]:
                     #basket_cleaning_flag[7]=True
-                    if rect_polgyon_iou([446,883,765,1163],basket_seg_region['platform'])>0.03:
+                    if rect_polgyon_iou([446,883,765,1163],basket_seg_region['platform'])>0.02:
                         basket_cleaning_flag[7]=True
                         print("空载")
                         #

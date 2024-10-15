@@ -103,9 +103,8 @@ def process_video(model_path, video_source,start_event,stop_event,equipment_clea
                     elif label=='seating_plate':
                         if(IoU(person_position,[x1,y1,x2,y2])>0.3):            
                             equipment_cleaning_flag[2]=True
-                        if(IoU([1248,223,1625,1026],[x1,y1,x2,y2])>0):
+                        if (x1 >= 1248 and y1 >= 223 and x2 <= 1625 and y2 <= 1026):
                             equipment_cleaning_flag[7]=True
-                            #print("座板和人有交集")
 
                     elif label=='u_lock':
                         equipment_cleaning_flag[6]=True
