@@ -1,13 +1,13 @@
-import threading
+#import threading
 # 全局变量来控制推理线程
-import redis
+#import redis
 import time
 # 连接到 Redis 服务器
-redis_client = redis.StrictRedis(host='localhost', port=5050, db=0,decode_responses=True)
+# redis_client = redis.StrictRedis(host='localhost', port=5050, db=0,decode_responses=True)
 
-inference_thread = None
-stop_event = threading.Event()
-lock=threading.Lock()
+# inference_thread = None
+# stop_event = threading.Event()
+# lock=threading.Lock()
 
 #condition = threading.Condition()
 ###############焊接考核

@@ -69,7 +69,7 @@ def process_video(model_path, video_source,start_event,stop_event,equipment_clea
             print("停止推理")
             break
         
-        if video_source.qsize() == 0:
+        if video_source.empty():
         # 队列为空，跳过处理
             continue
         
