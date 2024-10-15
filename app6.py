@@ -1,13 +1,22 @@
 import re
 
-from flask import Flask, jsonify,send_from_directory
+from fastapi import FastAPI
+import uvicorn
+import logging
+from fastapi.staticfiles import StaticFiles
 
 from equipment_cleaning_detect import process_video,video_decoder
 from config import EQUIPMENT_CLEANING_MODEL_SOURCES, EQUIPMENT_CLEANING_VIDEO_SOURCES
 from multiprocessing import Queue
 import multiprocessing as mp
 
-app = Flask(__name__)
+#焊接考核的穿戴
+app = FastAPI()
+# 挂载目录作为静态文件路径
+app.mount("/images", StaticFiles(directory="static/images"))
+# 获得uvicorn服务器的日志记录器
+logging = logging.getLogger("uvicorn")
+
 
 # 全局变量
 processes = []
@@ -44,11 +53,8 @@ def reset_shared_variables():
         while not queue.empty():
             queue.get()
 
-
-
-@app.route('/equipment_cleaning_detection', methods=['GET'])
+@app.get('/equipment_cleaning_detection')
 def equipment_cleaning_detection():  # 开启平台搭设检测
-    #global processes,equipment_cleaning_flag,equipment_cleaning_imgs,equipment_cleaning_order,person_postion
 
     if not any(p.is_alive() for p in processes):  # 防止重复开启检测服务
         stop_event.clear()
@@ -61,7 +67,7 @@ def equipment_cleaning_detection():  # 开启平台搭设检测
             process = mp.Process(target=video_decoder, args=(video_source,frame_queue_list, start_event, stop_event))
             processes.append(process)
             process.start()
-            print("拉流子进程运行中")
+            logging.info("拉流子进程运行中")
         
         # 启动多个进程进行设备清洗检测
         for model_path, video_source in zip(EQUIPMENT_CLEANING_MODEL_SOURCES, frame_queue_list):
@@ -71,31 +77,28 @@ def equipment_cleaning_detection():  # 开启平台搭设检测
             process = mp.Process(target=process_video, args=(model_path, video_source, start_event, stop_event,equipment_cleaning_flag,equipment_cleaning_imgs,equipment_cleaning_order,person_postion,equipment_warning_zone_flag))
             processes.append(process)
             process.start()
-            print("单人吊具清洗子进程运行中")
+            logging.info("单人吊具清洗子进程运行中")
 
-        app.logger.info('start_equipment_cleaning_detection')
+        logging.info('start_equipment_cleaning_detection')
         reset_shared_variables()
 
         # 等待所有进程的 start_event 被 set
         for event in start_events:
             event.wait()  # 等待每个进程通知它已经成功启动
 
-        return jsonify({"status": "SUCCESS"}), 200
+        #return jsonify({"status": "SUCCESS"}), 200
+        return {"status": "SUCCESS"}
 
     else:
-        app.logger.info("reset_detection already running")
-        return jsonify({"status": "ALREADY_RUNNING"}), 200
+        logging.info("reset_detection already running")
+        return {"status": "ALREADY_RUNNING"}
 
-
-
-
-@app.route('/equipment_cleaning_status', methods=['GET']) 
+@app.get('/equipment_cleaning_status')
 def equipment_cleaning_status():#获取平台搭设状态状态
     if len(equipment_cleaning_order)==0:#平台搭设步骤还没有一个完成
-    #if not redis_client.exists('equipment_cleaning_order'):#平台搭设步骤还没有一个完成
-        app.logger.info('equipment_cleaning_order is none')
+        logging.info('equipment_cleaning_order is none')
 
-        return jsonify({"status": "NONE"}), 200
+        return {"status": "NONE"}
     
     else:
         json_array = []
@@ -105,15 +108,14 @@ def equipment_cleaning_status():#获取平台搭设状态状态
             json_object = {"step": step_number, "image": equipment_cleaning_imgs.get(f"equipment_step_{step_number}")}
             json_array.append(json_object) 
 
-        return jsonify({"status": "SUCCESS","data":json_array}), 200
+        return {"status": "SUCCESS","data":json_array}
 
-
-@app.route('/equipment_cleaning_finish', methods=['GET']) 
+@app.get('/equipment_cleaning_finish')
 def equipment_cleaning_finish():#开始登录时，检测是否需要复位，若需要，则发送复位信息，否则开始焊接检测
 
     stop_inference_internal()
-    app.logger.info('bequipment_cleaning_order')
-    return jsonify({"status": "SUCCESS"}), 200
+    logging.info('bequipment_cleaning_order')
+    return {"status": "SUCCESS"}
 
 
 
@@ -128,35 +130,25 @@ def stop_inference_internal():
         for process in processes:
             if process.is_alive():
                 process.join()  # 等待每个子进程结束
-                print("单人吊具清洗子进程运行结束")
+                logging.info("单人吊具清洗子进程运行结束")
         
         processes = []  # 清空进程列表，释放资源
-        app.logger.info('detection stopped')
+        logging.info('detection stopped')
         return True
     else:
-        app.logger.info('No inference stopped')
+        logging.info('No inference stopped')
         return False
 
-
-@app.route('/stop_detection', methods=['GET'])
+@app.get('/stop_detection')
 def stop_inference():
     #global inference_thread
     if stop_inference_internal():
-        app.logger.info('detection stopped')
+        logging.info('detection stopped')
         reset_shared_variables()
-        return jsonify({"status": "DETECTION_STOPPED"}), 200
+        return {"status": "DETECTION_STOPPED"}
     else:
-        app.logger.info('No_detection_running')
-        return jsonify({"status": "No_detection_running"}), 200
+        logging.info('No_detection_running')
+        return {"status": "No_detection_running"}
 
-
-@app.route('/images/<filename>')
-def get_image(filename):
-    app.logger.info('get_image'+filename)
-    return send_from_directory('static/images', filename)
-
-
-if __name__ == '__main__':
-
-    # Start the Flask server
-    app.run(debug=False, host='172.16.20.163', port=5006)
+if __name__ == "__main__":
+    uvicorn.run(app, host="172.16.20.163", port=5006)
