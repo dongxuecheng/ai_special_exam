@@ -155,7 +155,7 @@ def stop_inference_internal():
 
 
 @app.get('/stop_detection')
-def stop_inference():
+def stop_detection():
     #global inference_thread
     if stop_inference_internal():
         logging.info('detection stopped')
