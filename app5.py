@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 import multiprocessing as mp
 from multiprocessing import Queue
 
-from basket_cleaning_detect import process_video,video_decoder,process_video_new
+from basket_cleaning_detect import video_decoder,process_video_new
 from config import BASKET_CLEANING_MODEL_SOURCES, BASKET_CLEANING_VIDEO_SOURCES
 
 #焊接考核的穿戴
@@ -139,7 +139,7 @@ def stop_inference_internal():
     global processes
     if processes:  # 检查是否有子进程正在运行
         stop_event.set()  # 设置停止事件标志，通知所有子进程停止运行
-
+        #logging.info('stop_event set')
         # 等待所有子进程结束
         for process in processes:
             if process.is_alive():
@@ -156,10 +156,11 @@ def stop_inference_internal():
 
 @app.get('/stop_detection')
 def stop_detection():
+    #logging.info(f'Processes before stopping: {processes}')
     #global inference_thread
     if stop_inference_internal():
         logging.info('detection stopped')
-        reset_shared_variables()
+        #reset_shared_variables()
         return {"status": "DETECTION_STOPPED"}
     else:
         logging.info('No_detection_running')
