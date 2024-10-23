@@ -54,13 +54,14 @@ def wearing_detection():
         start_events = []  # 存储每个进程的启动事件
         # 启动多个进程进行设备清洗检测
 
-        for video_source in WELDING_WEARING_VIDEO_SOURCES:
-            start_event = mp.Event()  # 为每个进程创建一个独立的事件
-            start_events.append(start_event)  # 加入 start_events 列表
-            process = mp.Process(target=video_decoder, args=(video_source,frame_queue_list, start_event, stop_event))
-            processes.append(process)
-            process.start()
-            logging.info("拉流子进程运行中")
+        #for video_source in WELDING_WEARING_VIDEO_SOURCES:
+        #穿戴只需要拉一个视频流
+        start_event = mp.Event()  # 为每个进程创建一个独立的事件
+        start_events.append(start_event)  # 加入 start_events 列表
+        process = mp.Process(target=video_decoder, args=(WELDING_WEARING_VIDEO_SOURCES,frame_queue_list, start_event, stop_event))
+        processes.append(process)
+        process.start()
+        logging.info("拉流子进程运行中")
 
         for model_path, video_source in zip(WELDING_WEARING_MODEL, frame_queue_list):
             start_event = mp.Event()  # 为每个进程创建一个独立的事件
@@ -103,6 +104,7 @@ def human_postion_status():#开始登录时，检测是否需要复位，若需�
 def wearing_status():#开始登录时，检测是否需要复位，若需要，则发送复位信息，否则开始焊接检测
 
     welding_wearing_detection_img_flag.value=True
+    time.sleep(1)
     if 'wearing_img' not in welding_wearing_detection_img or not welding_wearing_human_in_postion.value:
 
         return {"status": "NONE"}
@@ -123,6 +125,7 @@ def wearing_status():#开始登录时，检测是否需要复位，若需要，�
                
 @app.get('/end_wearing_exam')
 def end_wearing_exam():
+    #stop_inference_internal()
     reset_shared_variables()
     #return jsonify({"status": "SUCCESS"}), 200
     return {"status": "SUCCESS"}
@@ -149,7 +152,7 @@ def stop_inference_internal():
         return False
 
 @app.get('/stop_detection')
-def stop_inference():
+def stop_detection():
     #global inference_thread
     if stop_inference_internal():
         logging.info('detection stopped')

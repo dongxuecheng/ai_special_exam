@@ -140,11 +140,10 @@ def stop_inference_internal():
         return False
 
 @app.get('/stop_detection')
-def stop_inference():
-    #global inference_thread
+def stop_detection():
     if stop_inference_internal():
         logging.info('detection stopped')
-        reset_shared_variables()
+        #reset_shared_variables()
         return {"status": "DETECTION_STOPPED"}
     else:
         logging.info('No_detection_running')

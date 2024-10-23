@@ -20,15 +20,15 @@ def video_decoder(rtsp_url, frame_queue_list,start_event, stop_event):
         if cap.get(cv2.CAP_PROP_POS_FRAMES) % 25 != 0:
             continue
         if rtsp_url==WELDING_VIDEO_SOURCES[0]:
-            frame_queue_list[0].put(frame)
+            frame_queue_list[0].put_nowait(frame)
         elif rtsp_url==WELDING_VIDEO_SOURCES[1]:
-            frame_queue_list[1].put(frame)
+            frame_queue_list[1].put_nowait(frame)
         elif rtsp_url==WELDING_VIDEO_SOURCES[2]:
-            frame_queue_list[2].put(frame)
+            frame_queue_list[2].put_nowait(frame)
         elif rtsp_url==WELDING_VIDEO_SOURCES[3]:
-            frame_queue_list[3].put(frame)
+            frame_queue_list[3].put_nowait(frame)
         elif rtsp_url==WELDING_VIDEO_SOURCES[4]:
-            frame_queue_list[4].put(frame)
+            frame_queue_list[4].put_nowait(frame)
 
         start_event.set()  
     cap.release()   
