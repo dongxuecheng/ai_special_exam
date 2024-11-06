@@ -33,6 +33,7 @@ frame_queue_list = [Queue(maxsize=50) for _ in range(5)]  # 创建6个队列，�
 
 # 清空并重新初始化所有变量
 def reset_shared_variables():
+    global frame_queue_list
     for i in range(len(equipment_cleaning_flag)):
         equipment_cleaning_flag[i] = False
     
@@ -49,9 +50,10 @@ def reset_shared_variables():
     
     # 3. 清空 equipment_cleaning_imgs
     equipment_cleaning_imgs.clear()
-    for queue in frame_queue_list:
-        while not queue.empty():
-            queue.get()
+    frame_queue_list = [Queue(maxsize=50) for _ in range(5)]
+    # for queue in frame_queue_list:
+    #     while not queue.empty():
+    #         queue.get()
 
 @app.get('/equipment_cleaning_detection')
 def equipment_cleaning_detection():  # 开启平台搭设检测
@@ -125,15 +127,18 @@ def stop_inference_internal():
     global processes
     if processes:  # 检查是否有子进程正在运行
         stop_event.set()  # 设置停止事件标志，通知所有子进程停止运行
-
+        
         # 等待所有子进程结束
         for process in processes:
             if process.is_alive():
-                process.join()  # 等待每个子进程结束
-                logging.info("单人吊具清洗子进程运行结束")
+                process.join(timeout=1)  # 等待1秒
+                if process.is_alive():
+                    logging.warning('Process did not terminate, forcing termination')
+                    process.terminate()  # 强制终止子进程
         
         processes = []  # 清空进程列表，释放资源
         logging.info('detection stopped')
+        reset_shared_variables()
         return True
     else:
         logging.info('No inference stopped')

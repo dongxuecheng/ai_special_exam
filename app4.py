@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 
 from platform_setup_detect import start_platform_setup_detection,init_platform_setup_detection
 from platform_remove_detect import start_platform_remove_detection,init_platform_remove_detection
-from globals import inference_thread, stop_event,lock,redis_client
+#from globals import inference_thread, stop_event,lock,redis_client
 
 
 #焊接考核的穿戴

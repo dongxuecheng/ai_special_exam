@@ -32,6 +32,7 @@ frame_queue_list = [Queue(maxsize=50) for _ in range(2)]
 
 
 def reset_shared_variables():
+    global frame_queue_list
     # 1. 重置 welding_wearing_human_in_postion
     welding_wearing_human_in_postion.value = False
     welding_wearing_detection_img_flag.value = False
@@ -39,10 +40,10 @@ def reset_shared_variables():
     for i in range(len(welding_wearing_items_nums)):
         welding_wearing_items_nums[i] = 0
     welding_wearing_detection_img.clear()
-    
-    for queue in frame_queue_list:
-        while not queue.empty():
-            queue.get()
+    frame_queue_list = [Queue(maxsize=50) for _ in range(2)]
+    # for queue in frame_queue_list:
+    #     while not queue.empty():
+    #         queue.get()
 
 
 @app.get('/wearing_detection')
@@ -141,11 +142,14 @@ def stop_inference_internal():
         # 等待所有子进程结束
         for process in processes:
             if process.is_alive():
-                process.join()  # 等待每个子进程结束
-                logging.info("焊接穿戴子进程运行结束")
+                process.join(timeout=1)  # 等待1秒
+                if process.is_alive():
+                    logging.warning('Process did not terminate, forcing termination')
+                    process.terminate()  # 强制终止子进程
         
         processes = []  # 清空进程列表，释放资源
         logging.info('detection stopped')
+        reset_shared_variables()
         return True
     else:
         logging.info('No inference stopped')

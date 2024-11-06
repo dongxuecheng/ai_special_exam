@@ -1,6 +1,4 @@
-
 import time
-
 
 from platform_wearing_detect import video_decoder,process_video
 from config import PLATFORM_WEARING_VIDEO_SOURCES,PLATFORM_WEARING_MODEL
@@ -31,6 +29,7 @@ platform_wearing_detection_img = manager.dict()  #用于存储检测焊接穿戴
 frame_queue_list = [Queue(maxsize=50) for _ in range(2)] 
 
 def reset_shared_variables():
+    global frame_queue_list
     # 1. 重置 platform_wearing_human_in_postion
     platform_wearing_human_in_postion.value = False
     platform_wearing_detection_img_flag.value = False
@@ -38,10 +37,10 @@ def reset_shared_variables():
     for i in range(len(platform_wearing_items_nums)):
         platform_wearing_items_nums[i] = 0
     platform_wearing_detection_img.clear()
-    
-    for queue in frame_queue_list:
-        while not queue.empty():
-            queue.get()
+    frame_queue_list = [Queue(maxsize=50) for _ in range(2)] 
+    # for queue in frame_queue_list:
+    #     while not queue.empty():
+    #         queue.get()
     
     logging.info("reset_shared_variables!!")
 
@@ -135,11 +134,14 @@ def stop_inference_internal():
         # 等待所有子进程结束
         for process in processes:
             if process.is_alive():
-                process.join()  # 等待每个子进程结束
-                logging.info("平台穿戴子进程运行结束")
+                process.join(timeout=1)  # 等待1秒
+                if process.is_alive():
+                    logging.warning('Process did not terminate, forcing termination')
+                    process.terminate()  # 强制终止子进程
         
         processes = []  # 清空进程列表，释放资源
         logging.info('detection stopped')
+        reset_shared_variables()
         return True
     else:
         logging.info('No inference stopped')
