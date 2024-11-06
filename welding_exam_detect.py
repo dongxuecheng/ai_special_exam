@@ -26,25 +26,26 @@ def save_image(welding_exam_imgs,results, step_name,welding_exam_order):
 def process_video(model_path, video_source,start_event,stop_event,welding_exam_flag, welding_exam_imgs,welding_exam_order):
     # Load YOLO model
     model = YOLO(model_path)
-    
     while True:
         
         if stop_event.is_set():
-            print("复位子线程关闭")
+            print("考核子线程关闭")
             break
         
         if video_source.empty():
         # 队列为空，跳过处理
+            #print("队列为空")
             continue
         
         frame = video_source.get()    
 
         #if video_source == WELDING_CH2_RTSP:#这两个视频流用的分类模型，因为分类模型预处理较慢，需要手动resize
-        if model_path==WELDING_MODEL_PATHS[1]:
-            frame=cv2.resize(frame,(640,640))
+        # if model_path==WELDING_MODEL_PATHS[1]:
+        #     frame=cv2.resize(frame,(214,214))
         
-        results = model.predict(frame,verbose=False,conf=0.4)
-
+        results = model.predict(frame,verbose=False,conf=0.4,device='0')
+        # start_event.set()
+        # print("焊接考核子线程运行中f{model_path}")   
         #global steps
         global oil_barrel,main_switch,grounding_wire,welding_machine_switch,welding_components,mask,welding,gloves,sweep
         global sweep_detect_num,welding_detect_num
@@ -117,11 +118,12 @@ def process_video(model_path, video_source,start_event,stop_event,welding_exam_f
                             oil_barrel='safe' 
 
                     if label== "open" or "close":#检测焊机开关
-                        welding_machine_switch = label
+                        if confidence>0.8:
+                            welding_machine_switch = label
 
-                    if label=="turnon":
+                    if label=="turnon" and confidence>0.8:
                         main_switch="open"
-                    if label=="turnoff":
+                    if label=="turnoff" and confidence>0.8:
                         main_switch="close"
 
                     if label=="grounding_wire" :
@@ -151,26 +153,11 @@ def process_video(model_path, video_source,start_event,stop_event,welding_exam_f
                         else:
                             welding_exam_flag[7]=False
 
-            if model_path == WELDING_MODEL_PATHS[2]:
-                if oil_barrel=="safe" and 'welding_exam_1' not in welding_exam_imgs:#排除危险源
-                    save_image(welding_exam_imgs,results,"welding_exam_1",welding_exam_order)
-                
-            if model_path == WELDING_MODEL_PATHS[3]:
-                if main_switch=="open" and 'welding_exam_2' not in welding_exam_imgs:
-                    save_image(welding_exam_imgs,results,"welding_exam_2",welding_exam_order)
-
-                if main_switch=="close" and 'welding_exam_13' not in welding_exam_imgs and 'welding_exam_2' in welding_exam_imgs:
-                    save_image(welding_exam_imgs,results,"welding_exam_13",welding_exam_order)
-                
-            if model_path == WELDING_MODEL_PATHS[0]:
-                if welding_machine_switch=="open" and 'welding_exam_5' not in welding_exam_imgs:
-                    save_image(welding_exam_imgs,results,"welding_exam_5",welding_exam_order)
-                
-
-                if welding_machine_switch=="close" and 'welding_exam_9' not in welding_exam_imgs and 'welding_exam_5' in welding_exam_imgs:
-                    save_image(welding_exam_imgs,results,"welding_exam_9",welding_exam_order)
-                
             if model_path == WELDING_MODEL_PATHS[1]:
+                if not start_event.is_set():
+                    start_event.set()
+                    print(f"焊接考核子线程运行中{model_path}")
+
                 if welding_exam_flag[11]==True and 'welding_exam_12' not in welding_exam_imgs:
                     save_image(welding_exam_imgs,results,"welding_exam_12",welding_exam_order)
 
@@ -183,7 +170,42 @@ def process_video(model_path, video_source,start_event,stop_event,welding_exam_f
                 if welding_exam_flag[6]==True and 'welding_exam_7' not in welding_exam_imgs:
                     save_image(welding_exam_imgs,results,"welding_exam_7",welding_exam_order)
 
+            if model_path == WELDING_MODEL_PATHS[2]:
+                if not start_event.is_set():
+                    start_event.set()
+                    print(f"焊接考核子线程运行中{model_path}")
+                if oil_barrel=="safe" and 'welding_exam_1' not in welding_exam_imgs:#排除危险源
+                    save_image(welding_exam_imgs,results,"welding_exam_1",welding_exam_order)
+                
+            if model_path == WELDING_MODEL_PATHS[3]:
+                if not start_event.is_set():
+                    start_event.set()
+                    print(f"焊接考核子线程运行中{model_path}")
+                if main_switch=="open" and 'welding_exam_2' not in welding_exam_imgs:
+                    save_image(welding_exam_imgs,results,"welding_exam_2",welding_exam_order)
+
+                if main_switch=="close" and 'welding_exam_13' not in welding_exam_imgs and 'welding_exam_2' in welding_exam_imgs:
+                    save_image(welding_exam_imgs,results,"welding_exam_13",welding_exam_order)
+                
+            if model_path == WELDING_MODEL_PATHS[0]:
+                if not start_event.is_set():
+                    start_event.set()
+                    print(f"焊接考核子线程运行中{model_path}")
+
+                if welding_machine_switch=="open" and 'welding_exam_5' not in welding_exam_imgs:
+                    save_image(welding_exam_imgs,results,"welding_exam_5",welding_exam_order)
+                
+
+                if welding_machine_switch=="close" and 'welding_exam_9' not in welding_exam_imgs and 'welding_exam_5' in welding_exam_imgs:
+                    save_image(welding_exam_imgs,results,"welding_exam_9",welding_exam_order)
+                
+
+
             if model_path == WELDING_MODEL_PATHS[4]:
+                if not start_event.is_set():
+                    start_event.set()
+                    print(f"焊接考核子线程运行中{model_path}")
+
                 if welding_exam_flag[7]==True and 'welding_exam_8' not in welding_exam_imgs:
                     save_image(welding_exam_imgs,results,"welding_exam_8",welding_exam_order)
       
@@ -196,12 +218,11 @@ def process_video(model_path, video_source,start_event,stop_event,welding_exam_f
                 if welding_exam_flag[5]==True and 'welding_exam_6' not in welding_exam_imgs:
                     save_image(welding_exam_imgs,results,"welding_exam_6",welding_exam_order)
         
-            start_event.set()          
+                   
 
-
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
-    del model
+    # if torch.cuda.is_available():
+    #     torch.cuda.empty_cache()
+    # del model
 
 
 

@@ -36,6 +36,7 @@ frame_queue_list = [Queue(maxsize=50) for _ in range(5)]  # 创建6个队列，�
 
 def reset_shared_variables():
 
+    global frame_queue_list
     for i in range(len(welding_reset_flag)):
         welding_reset_flag[i] = False
     for i in range(len(welding_exam_flag)):
@@ -44,28 +45,32 @@ def reset_shared_variables():
     welding_reset_imgs.clear()
     welding_exam_imgs.clear()
     welding_exam_order[:]=[]
-    
-    for queue in frame_queue_list:
-        while not queue.empty():
-            queue.get()
+
+    frame_queue_list = [Queue(maxsize=50) for _ in range(5)]
+    print("-----------!!")
+    # for queue in frame_queue_list:
+    #     while not queue.empty():
+    #         queue.get()
+    #         logging.info("清空队列中")
 
 @app.get('/reset_detection')
 def reset_detection():#发送开启AI服务时，检测复位
-
     if not any(p.is_alive() for p in processes):  # 防止重复开启检测服务
         stop_event.clear()
 
         # 使用本地的 start_events 列表，不使用 Manager
         start_events = []  # 存储每个进程的启动事件
-
+        reset_shared_variables()
+        
         for video_source in WELDING_VIDEO_SOURCES:
             start_event = mp.Event()  # 为每个进程创建一个独立的事件
             start_events.append(start_event)  # 加入 start_events 列表
             process = mp.Process(target=video_decoder, args=(video_source,frame_queue_list, start_event, stop_event))
             processes.append(process)
             process.start()
-            logging.info("拉流子进程运行中")
-        # 启动多个进程进行设备清洗检测
+            #logging.info("拉流子进程运行中")
+            #logging.info(f"已启动视频解码进程 {process.pid}，来源：{video_source}")
+
         for model_path, video_source in zip(WELDING_MODEL_PATHS, frame_queue_list):
             start_event = mp.Event()  # 为每个进程创建一个独立的事件
             start_events.append(start_event)  # 加入 start_events 列表
@@ -73,18 +78,20 @@ def reset_detection():#发送开启AI服务时，检测复位
             process = mp.Process(target=process_video_reset, args=(model_path,video_source, start_event, stop_event, welding_reset_flag, welding_reset_imgs))
             processes.append(process)
             process.start()
-            logging.info("焊接复位子进程运行中")
+            #logging.info("焊接复位子进程运行中")
+            #logging.info(f"已启动焊接复位检测进程 {process.pid}")
 
         logging.info('start_welding_reset_detection')
-        reset_shared_variables()
+        
 
         # 等待所有进程的 start_event 被 set
         for event in start_events:
             event.wait()  # 等待每个进程通知它已经成功启动
+            #logging.info("start_envent is set")
 
         return {"status": "SUCCESS"}
     else:
-        logging.info("welding_reset_detection")
+        logging.info("welding_reset_detection——ALREADY_RUNNING")
         return {"status": "ALREADY_RUNNING"}
 
 @app.get('/reset_status')#TODO 调用速度太快
@@ -93,7 +100,7 @@ def reset_status():#获取复位检测状态
         logging.info('reset_all is true')
         #此时复位的检测还在进行，需要停止复位检测
         stop_inference_internal()
-
+        #time.sleep(6)
         return {"status": "RESET_ALL"}
     
     else:
@@ -116,30 +123,30 @@ def welding_detection():#开始登录时，检测是否需要复位，若需要�
         stop_event.clear()
 
         start_events = []  # 存储每个进程的启动事件
-
+        reset_shared_variables()
         for video_source in WELDING_VIDEO_SOURCES:
             start_event = mp.Event()  # 为每个进程创建一个独立的事件
             start_events.append(start_event)  # 加入 start_events 列表
             process = mp.Process(target=video_decoder, args=(video_source,frame_queue_list, start_event, stop_event))
             processes.append(process)
             process.start()
-            logging.info("拉流子进程运行中")
+            #logging.info("拉流子进程运行中")
 
         for model_path, video_source in zip(WELDING_MODEL_PATHS, frame_queue_list):
             start_event = mp.Event()  # 为每个进程创建一个独立的事件
             start_events.append(start_event)  # 加入 start_events 列表
-
             process = mp.Process(target=process_video_exam, args=(model_path,video_source, start_event, stop_event, welding_exam_flag, welding_exam_imgs,welding_exam_order))
             processes.append(process)
             process.start()
-            logging.info("焊接考核子进程运行中")
+            #logging.info("焊接考核子进程运行中")
 
         logging.info('start_welding_exam_detection')
-        reset_shared_variables()
+        
 
         # 等待所有进程的 start_event 被 set
         for event in start_events:
             event.wait()  # 等待每个进程通知它已经成功启动
+            #logging.info("start_envent is set")
 
         return {"status": "SUCCESS"}
 
@@ -148,16 +155,11 @@ def welding_detection():#开始登录时，检测是否需要复位，若需要�
         return {"status": "ALREADY_RUNNING"}
             
 @app.get('/welding_status')
-def welding_status():#开始登录时，检测是否需要复位，若需要，则发送复位信息，否则开始焊接检测
-
-    
+def welding_status():#开始登录时，检测是否需要复位，若需要，则发送复位信息，否则开始焊接检测  
     if len(welding_exam_order)==0:#表示还没有检测到任何一个焊接步骤
         logging.info('welding_exam_order is none')
         return {"status": "NONE"}
-
     else:
-
-
         json_array = []
         for value in welding_exam_order:
             match = re.search(r'welding_exam_(\d+)', value)
@@ -170,21 +172,26 @@ def welding_status():#开始登录时，检测是否需要复位，若需要，�
 def end_welding_exam():
     stop_inference_internal()
     time.sleep(1)
+    logging.info('---------')
     return reset_detection()
-
     
 #停止多进程函数的写法
 def stop_inference_internal():
     global processes
     if processes:  # 检查是否有子进程正在运行
         stop_event.set()  # 设置停止事件标志，通知所有子进程停止运行
-
+        #time.sleep(5)
         # 等待所有子进程结束
         for process in processes:
             if process.is_alive():
-                process.join()  # 等待每个子进程结束
+                process.join(timeout=1)  # 等待1秒
+                if process.is_alive():
+                    logging.warning('Process did not terminate, forcing termination')
+                    process.terminate()  # 强制终止子进程
                 
-        processes = []  # 清空进程列表，释放资源
+        #processes = []  # 清空进程列表，释放资源
+        processes.clear()  # 清空进程列表，释放资源
+
         logging.info('detection stopped')
         return True
     else:
@@ -194,11 +201,9 @@ def stop_inference_internal():
 @app.get('/stop_detection')
 def stop_detection():
     #global inference_thread
-    if stop_inference_internal():
-        logging.info('detection stopped')
+    if stop_inference_internal():        
         return {"status": "DETECTION_STOPPED"}
     else:
-        logging.info('No_detection_running')
         return {"status": "No_detection_running"}
 
 

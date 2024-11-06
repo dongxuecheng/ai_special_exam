@@ -11,14 +11,11 @@ from multiprocessing import Queue
 from basket_cleaning_detect import video_decoder,process_video_new
 from config import BASKET_CLEANING_MODEL_SOURCES, BASKET_CLEANING_VIDEO_SOURCES
 
-#焊接考核的穿戴
 app = FastAPI()
-# 挂载目录作为静态文件路径
+
 app.mount("/images", StaticFiles(directory="static/images"))
-# 获得uvicorn服务器的日志记录器
+
 logging = logging.getLogger("uvicorn")
-
-
 
 
 # 全局变量
@@ -28,7 +25,6 @@ stop_event = mp.Event()
 basket_cleaning_flag = mp.Array('b', [False] * 12)  # 创建一个长度为12的共享数组，并初始化为False,用于在多个线程中间传递变量
 #person_postion = mp.Array('f', [0.0] * 4)  # 创建一个长度为4的共享数组，并初始化为0.0,用于在多个线程中间传递浮点型变量#用于存储人的位置信息
 basket_cleaning_warning_zone_flag=mp.Array('b', [False] * 2)#存储两个视角下的警戒区域的检测结果
-
 
 #mp.Value适合单个值的场景，性能较慢
 manager = mp.Manager()
@@ -41,13 +37,10 @@ basket_seg_region=manager.dict()#用于存储吊篮的分割区域
 frame_queue_list = [Queue(maxsize=50) for _ in range(6)]  # 创建6个队列，用于存储视频帧
 
 
-
-
-
 def reset_shared_variables():
     # 1. 重置 basket_cleaning_flag
     
-
+    global frame_queue_list
     for i in range(len(basket_cleaning_flag)):
         basket_cleaning_flag[i] = False
 
@@ -61,20 +54,20 @@ def reset_shared_variables():
     # 3. 清空 basket_cleaning_imgs
     basket_cleaning_imgs.clear()
     basket_seg_region.clear()
-    
-    for queue in frame_queue_list:
-        while not queue.empty():
-            queue.get()
+    frame_queue_list=[Queue(maxsize=50) for _ in range(6)]
+    # for queue in frame_queue_list:
+    #     while not queue.empty():
+    #         queue.get()
 
 @app.get('/basket_cleaning_detection')
 def basket_cleaning_detection():#开启平台搭设检测
 
     if not any(p.is_alive() for p in processes):  # 防止重复开启检测服务
         stop_event.clear()
-        
-        
+               
         # 使用本地的 start_events 列表，不使用 Manager
-        start_events = []  # 存储每个进程的启动事件
+        start_events = []  # 存储每个进程的启动事件\
+        reset_shared_variables()
         for video_source in BASKET_CLEANING_VIDEO_SOURCES:
             start_event = mp.Event()  # 为每个进程创建一个独立的事件
             start_events.append(start_event)  # 加入 start_events 列表
@@ -94,7 +87,7 @@ def basket_cleaning_detection():#开启平台搭设检测
             logging.info("吊篮清洗子进程运行中")
 
         logging.info('start_equipment_cleaning_detection')
-        reset_shared_variables()
+        
 
         # 等待所有进程的 start_event 被 set
         for event in start_events:
@@ -143,11 +136,14 @@ def stop_inference_internal():
         # 等待所有子进程结束
         for process in processes:
             if process.is_alive():
-                process.join()  # 等待每个子进程结束
-                #logging.info("单人吊具清洗子进程运行结束")
-        
+                process.join(timeout=1)  # 等待1秒
+                if process.is_alive():
+                    logging.warning('Process did not terminate, forcing termination')
+                    process.terminate()  # 强制终止子进程
+                    
         processes = []  # 清空进程列表，释放资源
         logging.info('detection stopped')
+        
         return True
     else:
         logging.info('No inference stopped')

@@ -75,7 +75,7 @@ def video_decoder(rtsp_url, frame_queue_list,start_event, stop_event):
         ret, frame = cap.read()
         if not ret:
             break
-        if cap.get(cv2.CAP_PROP_POS_FRAMES) % 25 != 0:
+        if cap.get(cv2.CAP_PROP_POS_FRAMES) % 10 != 0:
             continue
         if rtsp_url==BASKET_CLEANING_VIDEO_SOURCES[0]:
             frame_queue_list[0].put_nowait(frame)
@@ -113,10 +113,10 @@ def process_video_new(model_path, video_source, start_event, stop_event, basket_
 
 
         if model_path== BASKET_CLEANING_MODEL_SOURCES[2]:#D4悬挂机构
-            results = model.track(frame,conf=0.6,verbose=False)
+            results = model.track(frame,conf=0.6,verbose=False,device='1')
         else:
             #results = model.predict(frame,conf=0.4,verbose=False)
-            results = model.track(frame,conf=0.3,verbose=False,persist=True,tracker="bytetrack.yaml")
+            results = model.track(frame,conf=0.3,verbose=False,persist=True,tracker="bytetrack.yaml",device='0')
 
         for r in results:
             if model_path==BASKET_CLEANING_MODEL_SOURCES[0] and not basket_cleaning_flag[1]:#D4悬挂机构
@@ -215,7 +215,7 @@ def process_video_new(model_path, video_source, start_event, stop_event, basket_
 
                 if not basket_person_flag and 'platform' in basket_seg_region and not basket_cleaning_flag[7]:
                     #basket_cleaning_flag[7]=True
-                    if rect_polgyon_iou([446,883,765,1163],basket_seg_region['platform'])>0.02:
+                    if rect_polgyon_iou([446,883,765,1163],basket_seg_region['platform'])>0.01:
                         basket_cleaning_flag[7]=True
                         print("空载")
                         #
@@ -250,7 +250,7 @@ def process_video_new(model_path, video_source, start_event, stop_event, basket_
                         if point_in_region_flag:
                             basket_cleaning_flag[0]=True
                 
-                if not basket_cleaning_warning_zone_flag[0] and not basket_cleaning_warning_zone_flag[1] and basket_cleaning_flag[0]:#当检测不到警戒区时,判定未拆除警戒区域
+                if not basket_cleaning_warning_zone_flag[0] and not basket_cleaning_warning_zone_flag[1] and basket_cleaning_flag[0] and basket_cleaning_flag[9]:#当检测不到警戒区时,判定未拆除警戒区域
                     basket_cleaning_flag[11]=True
                     print("拆除警戒区域-----------")
                 if basket_cleaning_flag[11] and not brush_flag:

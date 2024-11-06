@@ -17,21 +17,38 @@ def video_decoder(rtsp_url, frame_queue_list,start_event, stop_event):
         ret, frame = cap.read()
         if not ret:
             break
-        if cap.get(cv2.CAP_PROP_POS_FRAMES) % 25 != 0:
+        if cap.get(cv2.CAP_PROP_POS_FRAMES) % 10 != 0:
             continue
         if rtsp_url==WELDING_VIDEO_SOURCES[0]:
-            frame_queue_list[0].put_nowait(frame)
+            if not start_event.is_set():
+                start_event.set()
+                print(f"拉流子进程正在运行{rtsp_url}")
+            frame_queue_list[0].put(frame)
         elif rtsp_url==WELDING_VIDEO_SOURCES[1]:
-            frame_queue_list[1].put_nowait(frame)
+            if not start_event.is_set():
+                start_event.set()
+                print(f"拉流子进程正在运行{rtsp_url}")
+            frame_queue_list[1].put(frame)
+           
         elif rtsp_url==WELDING_VIDEO_SOURCES[2]:
-            frame_queue_list[2].put_nowait(frame)
+            if not start_event.is_set():
+                start_event.set()
+                print(f"拉流子进程正在运行{rtsp_url}")
+            frame_queue_list[2].put(frame)
         elif rtsp_url==WELDING_VIDEO_SOURCES[3]:
-            frame_queue_list[3].put_nowait(frame)
+            if not start_event.is_set():
+                start_event.set()
+                print(f"拉流子进程正在运行{rtsp_url}")
+            frame_queue_list[3].put(frame)
         elif rtsp_url==WELDING_VIDEO_SOURCES[4]:
-            frame_queue_list[4].put_nowait(frame)
-
-        start_event.set()  
+            if not start_event.is_set():
+                start_event.set()
+                print(f"拉流子进程正在运行{rtsp_url}")
+            frame_queue_list[4].put(frame)
+        #start_event.set()  
+        #print(frame_queue_list[0].qsize())
     cap.release()   
+
 
 def save_image(welding_reset_imgs,results, step_name):
 
@@ -48,7 +65,7 @@ def process_video(model_path, video_source, start_event, stop_event,welding_rese
     model = YOLO(model_path)
     while True:      
         if stop_event.is_set():
-            print("复位子线程关闭")
+            print("复位子进程关闭")
             break
         
         if video_source.empty():
@@ -56,11 +73,11 @@ def process_video(model_path, video_source, start_event, stop_event,welding_rese
             continue
         frame = video_source.get()
         #if video_source == WELDING_CH2_RTSP:#这两个视频流用的分类模型，因为分类模型预处理较慢，需要手动resize
-        if model_path == WELDING_MODEL_PATHS[1]:
-            frame=cv2.resize(frame,(640,640))
+        # if model_path == WELDING_MODEL_PATHS[1]:
+        #     frame=cv2.resize(frame,(224,224))
 
         # Run YOLOv8 inference on the frame
-        results = model.predict(frame,verbose=False,conf=0.4)
+        results = model.predict(frame,verbose=False,conf=0.4,device='0')
 
         for r in results:
 
@@ -142,37 +159,52 @@ def process_video(model_path, video_source, start_event, stop_event,welding_rese
 
 
             if model_path == WELDING_MODEL_PATHS[3]:
+                if not start_event.is_set():
+                    start_event.set()
+                    print(f"焊接复位子线程运行中{model_path}")
                 if welding_reset_flag[1] and 'reset_step_2' not in welding_reset_imgs:
                     print("当前总开关没有复位")
                     save_image(welding_reset_imgs,results, "reset_step_2")
 
             if model_path == WELDING_MODEL_PATHS[2]:
+                if not start_event.is_set():
+                    start_event.set()
+                    print(f"焊接复位子线程运行中{model_path}")
                 if welding_reset_flag[0] and 'reset_step_1' not in welding_reset_imgs:
                     print("当前油桶没有复位")
                     save_image(welding_reset_imgs,results, "reset_step_1")
 
             if model_path == WELDING_MODEL_PATHS[0]:
+                if not start_event.is_set():
+                    start_event.set()
+                    print(f"焊接复位子线程运行中{model_path}")
                 if welding_reset_flag[4] and 'reset_step_5' not in welding_reset_imgs:
                     print("当前焊机开关没有复位")
                     save_image(welding_reset_imgs,results, "reset_step_5")
 
             if model_path == WELDING_MODEL_PATHS[4]:
+                if not start_event.is_set():
+                    start_event.set()
+                    print(f"焊接复位子线程运行中{model_path}")
                 if welding_reset_flag[2] and 'reset_step_3' not in welding_reset_imgs:
                     print("搭铁线没有复位")
                     save_image(welding_reset_imgs,results, "reset_step_3")
 
             if model_path == WELDING_MODEL_PATHS[1]:
+                if not start_event.is_set():
+                    start_event.set()
+                    print(f"焊接复位子线程运行中{model_path}")
                 if welding_reset_flag[3] and 'reset_step_4' not in welding_reset_imgs:
                     print("当前焊件没有复位")
                     save_image(welding_reset_imgs,results, "reset_step_4")
 
             #运行到这里表示一个线程检测完毕
-            start_event.set()
+            
             
     # 释放模型资源（如果使用GPU）
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
-    del model
+    # if torch.cuda.is_available():
+    #     torch.cuda.empty_cache()
+    # del model
 
 
 

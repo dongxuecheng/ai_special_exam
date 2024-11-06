@@ -21,14 +21,21 @@ WELDING_CH4_RTSP = 'rtsp://admin:yaoan1234@172.16.22.232/cam/realmonitor?channel
 WELDING_CH5_RTSP = 'rtsp://admin:yaoan1234@172.16.22.234/cam/realmonitor?channel=1&subtype=0'#检查面具手套接地线视频
 WELDING_CH6_RTSP = 'rtsp://admin:yaoan1234@172.16.22.235/cam/realmonitor?channel=1&subtype=0'#劳保用品穿戴视频
 
-WELDING_CH1_MODEL="/mnt/xcd/code/ai_special_exam/weights/ch1_welding_switch_815_m.pt"
-WELDING_CH2_MODEL="/mnt/xcd/code/ai_special_exam/weights/ch2_welding_desk_cls_815_m.pt"
-WELDING_CH3_MODEL="/mnt/xcd/code/ai_special_exam/weights/ch3_oil_barrel_detect_815_m.pt"
-WELDING_CH4_MODEL="/mnt/xcd/code/ai_special_exam/weights/ch4_main_switch_detect_910_m.pt"
-WELDING_CH5_MODEL="/mnt/xcd/code/ai_special_exam/weights/ch5_mask_gloves_wire_detect_910_s_p2.pt"
-WELDING_CH6_MODEL='/mnt/xcd/code/ai_special_exam/weights/ch6_wearing_detect_815_m.pt'
+# WELDING_CH1_MODEL="/mnt/xcd/code/ai_special_exam/weights/ch1_welding_switch_813.pt"
+# WELDING_CH2_MODEL="/mnt/xcd/code/ai_special_exam/weights/ch2_welding_desk_cls_815_m.pt"
+# WELDING_CH3_MODEL="/mnt/xcd/code/ai_special_exam/weights/ch3_oil_barrel_detect_815_m.pt"
+# WELDING_CH4_MODEL="/mnt/xcd/code/ai_special_exam/weights/ch4_main_switch_detect_910_m.pt"
+# WELDING_CH5_MODEL="/mnt/xcd/code/ai_special_exam/weights/ch5_mask_gloves_wire_detect_910_s_p2.pt"
+# WELDING_CH6_MODEL='/mnt/xcd/code/ai_special_exam/weights/ch6_wearing_detect_815_m.pt'
 
-HUMAN_DETECTION_MODEL="/mnt/xcd/code/ai_special_exam/weights/yolov8n.pt"#人体检测模型
+WELDING_CH1_MODEL="/mnt/xcd/code/ai_special_exam/weights/11n/ch1_welding_switch_11n_detect_11_5.pt"
+WELDING_CH2_MODEL="/mnt/xcd/code/ai_special_exam/weights/ch2_welding_desk_cls_815_m.pt"
+WELDING_CH3_MODEL="/mnt/xcd/code/ai_special_exam/weights/11n/ch3_oil_barrel_11n_detect_115.pt"
+WELDING_CH4_MODEL="/mnt/xcd/code/ai_special_exam/weights/11n/ch4_main_switch_11n_detect_115.pt"
+WELDING_CH5_MODEL="/mnt/xcd/code/ai_special_exam/weights/11n/ch5_mask_gloves_wire_11n_detect_115.pt"
+WELDING_CH6_MODEL='/mnt/xcd/code/ai_special_exam/weights/11n/ch6_wearing_detect_115.pt'
+
+HUMAN_DETECTION_MODEL="/mnt/xcd/code/ai_special_exam/weights/11n/yolo11n.pt"#人体检测模型
 
 # Define paths to models
 WELDING_MODEL_PATHS = [
@@ -71,7 +78,7 @@ WELDING_REGION2 = np.array([[341, 0], [443, 399], [329, 856], [7, 247], [26, 142
 
 # 搭铁夹连接焊台位置
 
-WELDING_REGION3 = np.array([[1613, 627], [1601, 658], [1697, 987], [1710, 962]], np.int32)
+WELDING_REGION3 = np.array([[1534, 627], [1664, 1054], [2000, 1015], [1844, 588]], np.int32)
 
 
 ####平台搭设视频流
