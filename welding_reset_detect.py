@@ -23,28 +23,28 @@ def video_decoder(rtsp_url, frame_queue_list,start_event, stop_event):
             if not start_event.is_set():
                 start_event.set()
                 print(f"拉流子进程正在运行{rtsp_url}")
-            frame_queue_list[0].put(frame)
+            frame_queue_list[0].put_nowait(frame)
         elif rtsp_url==WELDING_VIDEO_SOURCES[1]:
             if not start_event.is_set():
                 start_event.set()
                 print(f"拉流子进程正在运行{rtsp_url}")
-            frame_queue_list[1].put(frame)
+            frame_queue_list[1].put_nowait(frame)
            
         elif rtsp_url==WELDING_VIDEO_SOURCES[2]:
             if not start_event.is_set():
                 start_event.set()
                 print(f"拉流子进程正在运行{rtsp_url}")
-            frame_queue_list[2].put(frame)
+            frame_queue_list[2].put_nowait(frame)
         elif rtsp_url==WELDING_VIDEO_SOURCES[3]:
             if not start_event.is_set():
                 start_event.set()
                 print(f"拉流子进程正在运行{rtsp_url}")
-            frame_queue_list[3].put(frame)
+            frame_queue_list[3].put_nowait(frame)
         elif rtsp_url==WELDING_VIDEO_SOURCES[4]:
             if not start_event.is_set():
                 start_event.set()
                 print(f"拉流子进程正在运行{rtsp_url}")
-            frame_queue_list[4].put(frame)
+            frame_queue_list[4].put_nowait(frame)
         #start_event.set()  
         #print(frame_queue_list[0].qsize())
     cap.release()   
