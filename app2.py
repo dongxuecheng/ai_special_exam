@@ -51,12 +51,17 @@ def reset_shared_variables():
     #queue.join_thread()  # 等待队列线程清理完毕
     
     #清空队列
+    # for queue in frame_queue_list:
+    #     while not queue.empty():
+    #         #queue.get()
+    #         #logging.info("清空队列中")
+    #         queue.close()  # 关闭队列
+    #         queue.join_thread()  # 等待队列线程清理完毕
     for queue in frame_queue_list:
+        logging.info("清空队列中--")
         while not queue.empty():
-            #queue.get()
-            # logging.info("清空队列中")
-            queue.close()  # 关闭队列
-            queue.join_thread()  # 等待队列线程清理完毕
+            queue.get()
+            logging.info("正在出队中")
 
 @app.get('/reset_detection')
 def reset_detection():#发送开启AI服务时，检测复位
@@ -65,7 +70,9 @@ def reset_detection():#发送开启AI服务时，检测复位
 
         # 使用本地的 start_events 列表，不使用 Manager
         start_events = []  # 存储每个进程的启动事件
+        logging.info('reset_detection_________')
         reset_shared_variables()
+        
         
         for video_source in WELDING_VIDEO_SOURCES:
             start_event = mp.Event()  # 为每个进程创建一个独立的事件
@@ -196,8 +203,10 @@ def stop_inference_internal():
                 
         #processes = []  # 清空进程列表，释放资源
         processes.clear()  # 清空进程列表，释放资源
-        # queue.close()  # 关闭队列
-        # queue.join_thread()  # 等待队列线程清理完毕
+        # for queue in frame_queue_list:
+        #     queue.close()  # 关闭队列
+        #     queue.cancel_join_thread()  # 等待队列线程清理完毕
+        #     logging.info("清空队列中")
         logging.info('detection stopped')
         return True
     else:
