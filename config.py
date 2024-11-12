@@ -29,7 +29,7 @@ WELDING_CH6_RTSP = 'rtsp://admin:yaoan1234@172.16.22.235/cam/realmonitor?channel
 # WELDING_CH6_MODEL='/mnt/xcd/code/ai_special_exam/weights/ch6_wearing_detect_815_m.pt'
 
 WELDING_CH1_MODEL="/mnt/xcd/code/ai_special_exam/weights/11n/ch1_welding_switch_11n_detect_11_5.pt"
-WELDING_CH2_MODEL="/mnt/xcd/code/ai_special_exam/weights/ch2_welding_desk_cls_815_m.pt"
+WELDING_CH2_MODEL="/mnt/xcd/code/ai_special_exam/weights/11n/ch2_welding_desk_cls_11n_115.pt"
 WELDING_CH3_MODEL="/mnt/xcd/code/ai_special_exam/weights/11n/ch3_oil_barrel_11n_detect_115.pt"
 WELDING_CH4_MODEL="/mnt/xcd/code/ai_special_exam/weights/11n/ch4_main_switch_11n_detect_115.pt"
 WELDING_CH5_MODEL="/mnt/xcd/code/ai_special_exam/weights/11n/ch5_mask_gloves_wire_11n_detect_115.pt"

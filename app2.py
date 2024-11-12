@@ -46,12 +46,17 @@ def reset_shared_variables():
     welding_exam_imgs.clear()
     welding_exam_order[:]=[]
 
-    frame_queue_list = [Queue(maxsize=50) for _ in range(5)]
-    print("-----------!!")
-    # for queue in frame_queue_list:
-    #     while not queue.empty():
-    #         queue.get()
-    #         logging.info("清空队列中")
+    #frame_queue_list = [Queue(maxsize=50) for _ in range(5)]
+    #queue.close()  # 关闭队列
+    #queue.join_thread()  # 等待队列线程清理完毕
+    
+    #清空队列
+    for queue in frame_queue_list:
+        while not queue.empty():
+            #queue.get()
+            # logging.info("清空队列中")
+            queue.close()  # 关闭队列
+            queue.join_thread()  # 等待队列线程清理完毕
 
 @app.get('/reset_detection')
 def reset_detection():#发送开启AI服务时，检测复位
@@ -191,7 +196,8 @@ def stop_inference_internal():
                 
         #processes = []  # 清空进程列表，释放资源
         processes.clear()  # 清空进程列表，释放资源
-
+        # queue.close()  # 关闭队列
+        # queue.join_thread()  # 等待队列线程清理完毕
         logging.info('detection stopped')
         return True
     else:

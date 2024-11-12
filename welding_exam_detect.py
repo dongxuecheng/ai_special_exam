@@ -43,7 +43,7 @@ def process_video(model_path, video_source,start_event,stop_event,welding_exam_f
         # if model_path==WELDING_MODEL_PATHS[1]:
         #     frame=cv2.resize(frame,(214,214))
         
-        results = model.predict(frame,verbose=False,conf=0.4,device='0')
+        results = model.predict(frame,verbose=False,conf=0.4,device='1')
         # start_event.set()
         # print("焊接考核子线程运行中f{model_path}")   
         #global steps
@@ -220,9 +220,9 @@ def process_video(model_path, video_source,start_event,stop_event,welding_exam_f
         
                    
 
-    # if torch.cuda.is_available():
-    #     torch.cuda.empty_cache()
-    # del model
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+    del model
 
 
 

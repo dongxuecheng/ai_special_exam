@@ -10,7 +10,6 @@ from utils.tool import IoU
 from config import SAVE_IMG_PATH,POST_IMG_PATH5,BASKET_CLEANING_MODEL_SOURCES,BASKET_CLEANING_VIDEO_SOURCES
 from config import BASKET_SUSPENSION_REGION,BASKET_STEEL_WIRE_REGION,BASKET_SAFETY_LOCK_REGION,BASKET_CLEANING_OPERATION_REGION,BASKET_WARNING_ZONE_REGION
 
-from queue import Empty
 
 def point_in_region(point, region):#判断点是否在多边形内
     is_inside = cv2.pointPolygonTest(region.reshape((-1, 1, 2)), point, False)

@@ -201,10 +201,10 @@ def process_video(model_path, video_source, start_event, stop_event,welding_rese
             #运行到这里表示一个线程检测完毕
             
             
-    # 释放模型资源（如果使用GPU）
-    # if torch.cuda.is_available():
-    #     torch.cuda.empty_cache()
-    # del model
+    #释放模型资源（如果使用GPU）
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+    del model
 
 
 
