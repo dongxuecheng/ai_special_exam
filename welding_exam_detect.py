@@ -150,8 +150,6 @@ def process_video(model_path, video_source,start_event,stop_event,welding_exam_f
                     if label=="gloves":
                         if confidence>0.5:
                             welding_exam_flag[7]=True#表示戴手套
-                        else:
-                            welding_exam_flag[7]=False
 
             if model_path == WELDING_MODEL_PATHS[1]:
                 if not start_event.is_set():

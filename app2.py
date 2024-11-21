@@ -58,7 +58,6 @@ def reset_shared_variables():
     #         queue.close()  # 关闭队列
     #         queue.join_thread()  # 等待队列线程清理完毕
     for queue in frame_queue_list:
-        logging.info("清空队列中--")
         while not queue.empty():
             queue.get()
             logging.info("正在出队中")
@@ -70,7 +69,6 @@ def reset_detection():#发送开启AI服务时，检测复位
 
         # 使用本地的 start_events 列表，不使用 Manager
         start_events = []  # 存储每个进程的启动事件
-        logging.info('reset_detection_________')
         reset_shared_variables()
         
         
