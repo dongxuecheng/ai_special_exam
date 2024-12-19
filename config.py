@@ -21,12 +21,7 @@ WELDING_CH4_RTSP = 'rtsp://admin:yaoan1234@172.16.22.232/cam/realmonitor?channel
 WELDING_CH5_RTSP = 'rtsp://admin:yaoan1234@172.16.22.234/cam/realmonitor?channel=1&subtype=0'#检查面具手套接地线视频
 WELDING_CH6_RTSP = 'rtsp://admin:yaoan1234@172.16.22.235/cam/realmonitor?channel=1&subtype=0'#劳保用品穿戴视频
 
-# WELDING_CH1_MODEL="/mnt/xcd/code/ai_special_exam/weights/ch1_welding_switch_813.pt"
-# WELDING_CH2_MODEL="/mnt/xcd/code/ai_special_exam/weights/ch2_welding_desk_cls_815_m.pt"
-# WELDING_CH3_MODEL="/mnt/xcd/code/ai_special_exam/weights/ch3_oil_barrel_detect_815_m.pt"
-# WELDING_CH4_MODEL="/mnt/xcd/code/ai_special_exam/weights/ch4_main_switch_detect_910_m.pt"
-# WELDING_CH5_MODEL="/mnt/xcd/code/ai_special_exam/weights/ch5_mask_gloves_wire_detect_910_s_p2.pt"
-# WELDING_CH6_MODEL='/mnt/xcd/code/ai_special_exam/weights/ch6_wearing_detect_815_m.pt'
+
 
 WELDING_CH1_MODEL="/mnt/xcd/code/ai_special_exam/weights/11n/ch1_welding_switch_11n_detect_11_5.pt"
 WELDING_CH2_MODEL="/mnt/xcd/code/ai_special_exam/weights/11n/ch2_welding_desk_cls_11n_115.pt"
@@ -116,7 +111,10 @@ PLATFORM_WEARING_VIDEO_SOURCES=PLATFORM_CH1_RTSP
 # PLATFORM_SETUP_MODEL=PLATFORM_SETUP_MODEL
 
 #吊篮清洗
-
+SERVER_IP='172.16.20.163'
+SERVER_PORT_BASKET_K2 = '5005'  # 吊篮k2服务器端口
+SAVE_IMG_PATH_BASKET_K2='images/basket/k2'
+URL_IMG_PATH_BASKET_K2=f'http://{SERVER_IP}:{SERVER_PORT_BASKET_K2}/{SAVE_IMG_PATH_BASKET_K2}'  
 
 BASKET_CLEANING_CH4_POSE_MODEL='/mnt/xcd/code/ai_special_exam/weights/yolov8s-pose1.pt'
 BASKET_CLEANING_CH5_DETECT_MODEL='/mnt/xcd/code/ai_special_exam/weights/ch6detect_basker_9_14_a_1.pt'
@@ -125,23 +123,23 @@ BASKET_CLEANING_CH6_DETECT_MODEL='/mnt/xcd/code/ai_special_exam/weights/ch6detec
 BASKET_CLEANING_CH6_SEG_MODEL='/mnt/xcd/code/ai_special_exam/weights/basket_seg_9_13.pt'
 BASKET_CLEANING_CH6_SAFETY_BELT_MODEL='/mnt/xcd/code/yolov8/runs/detect/train51/weights/last.pt'
 
-BASKET_CLEANING_CH4_RTSP='rtsp://admin:yaoan1234@172.16.22.237/cam/realmonitor?channel=1&subtype=0'
-BASKET_CLEANING_CH5_RTSP='rtsp://admin:yaoan1234@172.16.22.239/cam/realmonitor?channel=1&subtype=0'
-BASKET_CLEANING_CH6_RTSP='rtsp://admin:yaoan1234@172.16.22.242/cam/realmonitor?channel=1&subtype=0'
+BASKET_CLEANING_CH4_RTSP='rtsp://admin:yaoan1234@172.16.22.237/cam/realmonitor?channel=1&subtype=0'#检测悬挂机构
+BASKET_CLEANING_CH5_RTSP='rtsp://admin:yaoan1234@172.16.22.239/cam/realmonitor?channel=1&subtype=0'#正面视角
+BASKET_CLEANING_CH6_RTSP='rtsp://admin:yaoan1234@172.16.22.242/cam/realmonitor?channel=1&subtype=0'#顶部视角
 
-BASKET_CLEANING_VIDEO_SOURCES=[BASKET_CLEANING_CH4_RTSP,
-                               BASKET_CLEANING_CH5_RTSP,
-                               BASKET_CLEANING_CH6_RTSP]
+VIDEOS_BASKET=[BASKET_CLEANING_CH4_RTSP,
+               BASKET_CLEANING_CH5_RTSP,
+               BASKET_CLEANING_CH6_RTSP]
                             #    BASKET_CLEANING_CH6_RTSP,
                             #    BASKET_CLEANING_CH6_RTSP,
                             #    BASKET_CLEANING_CH6_RTSP]
 
-BASKET_CLEANING_MODEL_SOURCES=[BASKET_CLEANING_CH4_POSE_MODEL,
-                               BASKET_CLEANING_CH5_DETECT_MODEL,
+WEIGHTS_BASKET=[BASKET_CLEANING_CH4_POSE_MODEL,
+                               BASKET_CLEANING_CH5_DETECT_MODEL,#检测警戒区
                                BASKET_CLEANING_CH6_POSE_MODEL,
-                               BASKET_CLEANING_CH6_DETECT_MODEL,
+                               BASKET_CLEANING_CH6_DETECT_MODEL,#检测警戒区，刷子
                                BASKET_CLEANING_CH6_SEG_MODEL,
-                               BASKET_CLEANING_CH6_SAFETY_BELT_MODEL]
+                               BASKET_CLEANING_CH6_SAFETY_BELT_MODEL]#检查安全带
 
 #
 
@@ -176,8 +174,13 @@ BASKET_EMPTY_LOAD_REGION = np.array([(752, 855), (712, 969), (836, 1020), (896, 
 BASKET_WARNING_ZONE_REGION=np.array([(1250, 0), (1256, 469), (2048, 492), (2048, 0)], np.int32)
 
 #单人吊具
-EQUIPMENT_CLEANING_CH3_RTSP='rtsp://admin:yaoan1234@172.16.22.238/cam/realmonitor?channel=1&subtype=0'
-EQUIPMENT_CLEANING_CH8_RTSP='rtsp://admin:yaoan1234@172.16.22.44/cam/realmonitor?channel=1&subtype=0'
+SERVER_PORT_EQUIPMENT_K2 = '5006'  # 吊篮k2服务器端口
+SAVE_IMG_PATH_EQUIPMENT_K2='images/equipment/k2'
+URL_IMG_PATH_EQUIPMENT_K2=f'http://{SERVER_IP}:{SERVER_PORT_EQUIPMENT_K2}/{SAVE_IMG_PATH_EQUIPMENT_K2}'
+
+
+EQUIPMENT_CLEANING_CH3_RTSP='rtsp://admin:yaoan1234@172.16.22.238/cam/realmonitor?channel=1&subtype=0'#正面视角
+EQUIPMENT_CLEANING_CH8_RTSP='rtsp://admin:yaoan1234@172.16.22.44/cam/realmonitor?channel=1&subtype=0'#顶部视角
 #EQUIPMENT_CLEANING_CH10_RTSP='rtsp://admin:yaoan1234@172.16.22.44/cam/realmonitor?channel=1&subtype=0'
 
 
@@ -190,39 +193,44 @@ EQUIPMENT_CLEANING_CH8_DETECT_MODEL='/mnt/xcd/code/yolov8/runs/detect/train50/we
 #检测安全带/自锁器
 EQUIPMENT_CLEANING_CH8_SAFETY_BELT_DETECT_MODEL='/mnt/xcd/code/yolov8/runs/detect/train51/weights/last.pt'
 
-EQUIPMENT_CLEANING_VIDEO_SOURCES=[EQUIPMENT_CLEANING_CH3_RTSP,
-                                  #EQUIPMENT_CLEANING_CH3_RTSP,
-                                  #EQUIPMENT_CLEANING_CH10_RTSP,
-                                  EQUIPMENT_CLEANING_CH8_RTSP,
-                                  #EQUIPMENT_CLEANING_CH8_RTSP,
-                                  #EQUIPMENT_CLEANING_CH8_RTSP
+VIDEOS_EQUIPMENT=[EQUIPMENT_CLEANING_CH3_RTSP,
+                EQUIPMENT_CLEANING_CH8_RTSP]
+
+WEIGHTS_EQUIPMENT=[EQUIPMENT_CLEANING_CH3_DETECT_MODEL1,
+                   EQUIPMENT_CLEANING_CH3_DETECT_MODEL2,
+                   EQUIPMENT_CLEANING_CH8_POSE_MODEL,
+                   EQUIPMENT_CLEANING_CH8_DETECT_MODEL,
+                   EQUIPMENT_CLEANING_CH8_SAFETY_BELT_DETECT_MODEL
 ]
 
-EQUIPMENT_CLEANING_MODEL_SOURCES=[EQUIPMENT_CLEANING_CH3_DETECT_MODEL1,
-                                  EQUIPMENT_CLEANING_CH3_DETECT_MODEL2,
-                                  #EQUIPMENT_CLEANING_CH10_DETECT_MODEL1,
-                                  EQUIPMENT_CLEANING_CH8_POSE_MODEL,
-                                  EQUIPMENT_CLEANING_CH8_DETECT_MODEL,
-                                  EQUIPMENT_CLEANING_CH8_SAFETY_BELT_DETECT_MODEL
-]
-
+#吊具警戒区域顶部视角
 EQUIPMENT_WARNING_ZONE_REGION = np.array([
-    [[813, 835], [815, 1435], [1682, 1435], [1681, 835]],
+    [[475, 798], [475, 1440], [1171, 1440], [1171, 798]],
+], np.int32)
+#吊具挂点装置 正面视角
+EQUIPMENT_ANCHOR_DEVICE_REGION = np.array([
+    [[597, 10], [597, 568], [961, 568], [961, 11]],
 ], np.int32)
 
-EQUIPMENT_ANCHOR_DEVICE_REGION = np.array([
+#吊具坐入座板区域，正面视角，在楼梯区域检测到座板
+EQUIPMENT_SEATING_PLATE_REGION = np.array([
     [[855, 0], [855, 536], [1288, 536], [1288, 0]],
 ], np.int32)
+
+#吊具工作绳区域，顶部视角
 EQUIPMENT_WORK_ROPE_REGION = np.array([
     [[368, 1193], [1546, 1400], [1803, 1178], [1378, 1126]],
 ], np.int32)
+#吊具安全绳区域，顶部视角
 EQUIPMENT_SAFETY_ROPE_REGION = np.array([
     [[368, 1193], [1546, 1400], [1803, 1178], [1378, 1126]],
 ], np.int32)
-EQUIPMENT_SELF_LOCKING_DEVICE_REGION = np.array([
-    [],
-], np.int32)
 
+#吊具清洗操作区域，顶部视角
 EQUIPMENT_CLEANING_OPERATION_REGION=np.array([
     [[405, 693], [405, 1422], [1827, 1422], [1827, 685]],
     ], np.int32)
+
+EQUIPMENT_SELF_LOCKING_DEVICE_REGION = np.array([
+    [],
+], np.int32)

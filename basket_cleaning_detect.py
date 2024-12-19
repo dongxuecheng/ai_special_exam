@@ -78,12 +78,12 @@ def video_decoder(rtsp_url, frame_queue_list,start_event, stop_event):
             continue
         if rtsp_url==BASKET_CLEANING_VIDEO_SOURCES[0]:
             frame_queue_list[0].put_nowait(frame)
-            sava_raw_image(frame,'ch0')
+            #sava_raw_image(frame,'ch0')
         elif rtsp_url==BASKET_CLEANING_VIDEO_SOURCES[1]:
             frame_queue_list[1].put_nowait(frame)
-            sava_raw_image(frame,'ch1')
+            #sava_raw_image(frame,'ch1')
         elif rtsp_url==BASKET_CLEANING_VIDEO_SOURCES[2]:
-            sava_raw_image(frame,'ch2')
+            #sava_raw_image(frame,'ch2')
             frame_queue_list[2].put_nowait(frame)
             frame_queue_list[3].put_nowait(frame)
             frame_queue_list[4].put_nowait(frame)

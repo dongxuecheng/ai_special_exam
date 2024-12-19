@@ -41,9 +41,9 @@ def reset_shared_variables():
         welding_wearing_items_nums[i] = 0
     welding_wearing_detection_img.clear()
     frame_queue_list = [Queue(maxsize=50) for _ in range(2)]
-    # for queue in frame_queue_list:
-    #     while not queue.empty():
-    #         queue.get()
+    for queue in frame_queue_list:
+        while not queue.empty():
+            queue.get()
 
 
 @app.get('/wearing_detection')

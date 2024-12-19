@@ -94,10 +94,10 @@ def process_video(model_path, video_source,start_event,stop_event,equipment_clea
                         centerx=(x1+x2)/2
                         centery=(y1+y2)/2
                         equipment_warning_zone_flag[0]=True
-                        point_in_region_flag=point_in_region([centerx,centery],EQUIPMENT_WARNING_ZONE_REGION)#警戒区划分区域
-                        if point_in_region_flag:
-                            equipment_cleaning_flag[0]=True
-                            equipment_warning_zone_flag[0]=True
+                        # point_in_region_flag=point_in_region([centerx,centery],EQUIPMENT_WARNING_ZONE_REGION)#警戒区划分区域
+                        # if point_in_region_flag:
+                        equipment_cleaning_flag[0]=True
+                            #equipment_warning_zone_flag[0]=True
 
 
                     elif label=='seating_plate':
@@ -191,7 +191,10 @@ def process_video(model_path, video_source,start_event,stop_event,equipment_clea
                             equipment_cleaning_flag[9]=True
 
                     if label=='warning_zone' and confidence>0.7:
-                        equipment_warning_zone_flag[1]=True
+                        point_in_region_flag=point_in_region([centerx,centery],EQUIPMENT_WARNING_ZONE_REGION)#警戒区划分区域
+                        if point_in_region_flag:
+                            equipment_warning_zone_flag[1]=True
+                            equipment_cleaning_flag[0]=True
 
 
                 if equipment_cleaning_flag[11] and not brush_flag:

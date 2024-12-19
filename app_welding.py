@@ -91,7 +91,8 @@ def infer_yolo(model_path, video_source, start_event, stop_event,welding_reset_f
                     welding_exam_flag[3]=True
                 elif label == "empty":
                     welding_reset_flag[3]=False
-                    welding_exam_flag[10]=False
+                    if welding_exam_flag[6]:#表示完成焊接
+                        welding_exam_flag[10]=True
                 elif label=='welding':
                     welding_exam_flag[6]=True#表示有焊接
                 elif label=='sweep' and welding_exam_flag[6]==True:
@@ -164,7 +165,7 @@ def infer_yolo(model_path, video_source, start_event, stop_event,welding_reset_f
                         welding_exam_flag[2]=True
                     else:
                         welding_reset_flag[2]=False #表示未连接上
-                        if welding_exam_flag[2]:#表示已经检测到搭铁线连接上了,但是现在没有连接上
+                        if welding_exam_flag[2] and welding_exam_flag[6]:#表示已经检测到搭铁线连接上了,但是现在没有连接上
                             welding_exam_flag[9]=True#焊接考核第十步
                 
                 if label=="mask":

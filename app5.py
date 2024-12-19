@@ -54,12 +54,14 @@ def reset_shared_variables():
     # 3. 清空 basket_cleaning_imgs
     basket_cleaning_imgs.clear()
     basket_seg_region.clear()
-    frame_queue_list=[Queue(maxsize=50) for _ in range(6)]
-    # for queue in frame_queue_list:
-    #     while not queue.empty():
-    #         queue.get()
-
-@app.get('/basket_cleaning_detection')
+    #frame_queue_list=[Queue(maxsize=50) for _ in range(6)]
+    for queue in frame_queue_list:
+        while not queue.empty():
+            queue.get()
+@app.get('/start_detection')
+def start_detection():
+    return {"status": "SUCCESS"}
+@app.get('/start_exam')
 def basket_cleaning_detection():#开启平台搭设检测
 
     if not any(p.is_alive() for p in processes):  # 防止重复开启检测服务
@@ -67,7 +69,7 @@ def basket_cleaning_detection():#开启平台搭设检测
                
         # 使用本地的 start_events 列表，不使用 Manager
         start_events = []  # 存储每个进程的启动事件\
-        reset_shared_variables()
+        #reset_shared_variables()
         for video_source in BASKET_CLEANING_VIDEO_SOURCES:
             start_event = mp.Event()  # 为每个进程创建一个独立的事件
             start_events.append(start_event)  # 加入 start_events 列表
@@ -99,7 +101,7 @@ def basket_cleaning_detection():#开启平台搭设检测
         logging.info("reset_detection already running")
         return {"status": "ALREADY_RUNNING"}
 
-@app.get('/basket_cleaning_status')
+@app.get('/exam_status')
 def basket_cleaning_status():#获取平台搭设状态状态
     if len(basket_cleaning_order)==0:#平台搭设步骤还没有一个完成
         logging.info('basket_cleaning_order is none')
@@ -118,7 +120,7 @@ def basket_cleaning_status():#获取平台搭设状态状态
         return {"status": "SUCCESS","data":json_array}
 
 
-@app.get('/basket_cleaning_finish')
+@app.get('/stop_exam')
 def basket_cleaning_finish():#开始登录时，检测是否需要复位，若需要，则发送复位信息，否则开始焊接检测
 
     stop_inference_internal()
@@ -156,7 +158,7 @@ def stop_detection():
     #global inference_thread
     if stop_inference_internal():
         logging.info('detection stopped')
-        #reset_shared_variables()
+        reset_shared_variables()
         return {"status": "DETECTION_STOPPED"}
     else:
         logging.info('No_detection_running')
